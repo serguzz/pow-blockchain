@@ -3,24 +3,35 @@ import time
 
 # Block class with PoW
 class Block:
-    def __init__(self, index, previous_hash, transactions, difficulty=4, timestamp=None):
+    def __init__(self, index, previous_hash, data, difficulty=5, timestamp=None, nonce=0):
         self.index = index
         self.previous_hash = previous_hash
-        self.transactions = transactions
+        self.data = data
         self.timestamp = timestamp or time.time()
-        self.nonce = 0  # Starts at 0
+        self.nonce = nonce
         self.difficulty = difficulty  # Number of leading zeros required in hash
-        self.hash = self.mine_block()
+        self.hash = self.calculate_hash()
 
     def calculate_hash(self):
         """Returns SHA-256 hash of block data."""
-        data = f"{self.index}{self.previous_hash}{self.transactions}{self.timestamp}{self.nonce}"
-        return hashlib.sha256(data.encode()).hexdigest()
+        value = f"{self.index}{self.previous_hash}{self.data}{self.timestamp}{self.nonce}"
+        return hashlib.sha256(value.encode()).hexdigest()
 
     def mine_block(self):
         """Proof of Work: Adjust nonce until hash meets difficulty criteria."""
-        while True:
-            hash_attempt = self.calculate_hash()
-            if hash_attempt[:self.difficulty] == "0" * self.difficulty:  # Check if hash meets difficulty
-                return hash_attempt
-            self.nonce += 1  # Increment nonce and try again
+        prefix = '0' * self.difficulty
+        while not self.hash.startswith(prefix):
+            self.nonce += 1
+            self.hash = self.calculate_hash()
+        return self.hash
+    
+    def to_dict(self):
+        return {
+            'index': self.index,
+            'previous_hash': self.previous_hash,
+            'data': self.data,
+            'difficulty': self.difficulty,
+            'timestamp': self.timestamp,
+            'nonce': self.nonce,
+            'hash': self.hash
+        }
