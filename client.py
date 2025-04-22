@@ -2,7 +2,7 @@ import requests
 from block import Block
 
 SERVER_URL = "http://127.0.0.1:5000"
-DIFFICULTY = 6  # Should match server-side difficulty
+DIFFICULTY = 6 # Should match server-side difficulty
 
 # Step 1: Get the latest block
 latest_block_res = requests.get(f'{SERVER_URL}/latest')
