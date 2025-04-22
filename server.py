@@ -7,7 +7,7 @@ app = Flask(__name__)
 chain_lock = Lock()  # Prevent race conditions
 
 blockchain = Blockchain()
-blockchain.add_block("Genesis Block")  # Only if your chain starts empty
+# blockchain.add_block("Genesis Block")  # Only if your chain starts empty
 
 @app.route('/chain', methods=['GET'])
 def get_chain():
@@ -49,6 +49,7 @@ def receive_mined_block():
             return jsonify({'error': 'Invalid hash or PoW'}), 400
 
         blockchain.chain.append(received_block)
+        blockchain.save_chain()
         print(f"✅ Block {received_block.index} accepted from client")
         return jsonify(received_block.to_dict()), 201
 
