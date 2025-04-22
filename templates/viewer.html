@@ -1,6 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html>  
 <head>
+    <!-- Script for listening to the new block events -->
+    <script>
+        const eventSource = new EventSource("/stream");
+    
+        eventSource.onmessage = function(event) {
+            console.log("🔥 New block event received:", event.data);
+            location.reload(); // refresh the page to show new block
+        };
+    </script>    
     <title>Blockchain Viewer</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }

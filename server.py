@@ -1,13 +1,23 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, Response, jsonify, render_template
+import queue
+import time
+import threading
+from threading import Lock
 from blockchain import Blockchain
 from block import Block
-from threading import Lock
 
+subscribers = []
 app = Flask(__name__)
 chain_lock = Lock()  # Prevent race conditions
 
 blockchain = Blockchain()
 # blockchain.add_block("Genesis Block")  # Only if your chain starts empty
+
+# Notify subscribers about new block
+def broadcast_new_block(block):
+    data = f"New block #{block.index} added!"
+    for q in subscribers:
+        q.put(data)
 
 @app.route('/chain', methods=['GET'])
 def get_chain():
@@ -51,12 +61,27 @@ def receive_mined_block():
         blockchain.chain.append(received_block)
         blockchain.save_chain()
         print(f"✅ Block {received_block.index} accepted from client")
+        broadcast_new_block(received_block)
         return jsonify(received_block.to_dict()), 201
 
 @app.route('/view')
 def view_chain():
     chain_data = [block.to_dict() for block in blockchain.chain]
     return render_template('viewer.html', chain=chain_data)
+
+@app.route('/stream')
+def stream():
+    def event_stream():
+        q = queue.Queue()
+        subscribers.append(q)
+        try:
+            while True:
+                data = q.get()
+                yield f"data: {data}\n\n"
+        except GeneratorExit:
+            subscribers.remove(q)
+
+    return Response(event_stream(), content_type='text/event-stream')
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True, threaded=True)
