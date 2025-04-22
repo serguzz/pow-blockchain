@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blockchain Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+        .block { background: white; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .block h2 { margin: 0 0 10px; }
+        .block pre { background: #eee; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Blockchain Viewer</h1>
+    {% for block in chain %}
+    <div class="block">
+        <h2>Block #{{ block.index }}</h2>
+        <p><strong>Timestamp:</strong> {{ block.timestamp }}</p>
+        <p><strong>Previous Hash:</strong> {{ block.previous_hash }}</p>
+        <p><strong>Hash:</strong> {{ block.hash }}</p>
+        <p><strong>Nonce:</strong> {{ block.nonce }}</p>
+        <p><strong>Difficulty:</strong> {{ block.difficulty }}</p>
+        <p><strong>Data:</strong></p>
+        <pre>{{ block.data }}</pre>
+    </div>
+    {% endfor %}
+</body>
+</html>

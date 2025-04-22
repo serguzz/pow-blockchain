@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from blockchain import Blockchain
 from block import Block
 from threading import Lock
@@ -52,6 +52,11 @@ def receive_mined_block():
         blockchain.save_chain()
         print(f"✅ Block {received_block.index} accepted from client")
         return jsonify(received_block.to_dict()), 201
+
+@app.route('/view')
+def view_chain():
+    chain_data = [block.to_dict() for block in blockchain.chain]
+    return render_template('viewer.html', chain=chain_data)
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True, threaded=True)
