@@ -22,6 +22,7 @@ This is a **testnet-style blockchain simulation** where multiple client nodes mi
 
 ## 📁 Structure
 
+```
 blockchain/ 
 ├── block.py # Block class
 ├── blockchain.py # Blockchain class
@@ -35,7 +36,7 @@ blockchain/
 │ └── index.html # UI layout
 ├── run_client.sh # Bash script to start new node
 ├── README.md
-
+```
 
 ---
 
