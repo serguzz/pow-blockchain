@@ -1,21 +1,35 @@
 import requests
-from flask import Flask, render_template, jsonify
+import queue
+from flask import Flask, render_template, jsonify, request, Response
 from blockchain import Blockchain, Block
 
 class ClientNode:
-    def __init__(self, client_id, port, server_url="http://localhost:5000"):
+    def __init__(self, client_id, port, peers=None):
         self.client_id = client_id
         self.port = port
-        self.server_url = server_url
-        self.peers = set([server_url])  # Start with main server
+        self.node_url = f"http://localhost:{port}"
+        self.subscribers = []
+        self.peers = set(peers or [])  # Start with known peers
         self.app = Flask(__name__, template_folder='templates')
         self.setup_routes()
+        self.register_with_peers()
         self.blockchain = Blockchain(client_id=client_id)
+        self.sync_chain()
 
     def setup_routes(self):
         @self.app.route('/')
         def home():
             return render_template('index.html', client_id=self.client_id)
+
+        # Route to register a new peer
+        @self.app.route('/register', methods=['POST'])
+        def register():
+            data = request.get_json()
+            peer_url = data.get("peer")
+            if peer_url and peer_url != self.node_url:
+                self.peers.add(peer_url)
+                print(f"[+] New peer registered: {peer_url}")
+            return jsonify({"peers": list(self.peers)})
 
         # Route to mine a block
         @self.app.route('/mine', methods=['POST'])
@@ -43,6 +57,7 @@ class ClientNode:
 
                 self.blockchain.chain.append(block)
                 self.blockchain.save_chain()
+                self.broadcast_to_subscribers(block)
                 return jsonify({'message': 'Block added'}), 200
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
@@ -50,24 +65,68 @@ class ClientNode:
         @self.app.route('/chain', methods=['GET'])
         def get_chain():
             return [block.__dict__ for block in self.blockchain.chain]
+        
+        @self.app.route('/view')
+        def view_chain():
+            chain_data = [block.to_dict() for block in self.blockchain.chain]
+            return render_template('viewer.html', chain=chain_data)
 
-    # Register Node with the main server
-    def register(self):
-        try:
-            res = requests.post(f"{self.server_url}/register", json={
-                "client_id": self.client_id,
-                "url": f"http://localhost:{self.port}"
-            })
-            peers = res.json().get("peers", [])
-            self.peers.update(peers)
-        except Exception as e:
-            print(f"Registration failed: {e}")
+        @self.app.route('/stream')
+        def stream():
+            def event_stream():
+                q = queue.Queue()
+                self.subscribers.append(q)
+                try:
+                    while True:
+                        data = q.get()
+                        yield f"data: {data}\n\n"
+                except GeneratorExit:
+                    self.subscribers.remove(q)
+
+            return Response(event_stream(), content_type='text/event-stream')
+
+    # Notify subscribers about new block
+    def broadcast_to_subscribers(self, block):
+        data = f"New block #{block.index} added!"
+        for q in self.subscribers:
+            q.put(data)
+
+    def register_with_peers(self):
+        known_peers = set(self.peers)
+        new_discovered_peers = set()
+
+        for peer_url in list(known_peers):
+            try:
+                res = requests.post(f"{peer_url}/register", json={"peer": self.node_url})
+                if res.status_code == 200:
+                    received_peers = set(res.json().get("peers", []))
+                    discovered_peers = received_peers - known_peers - {self.node_url}
+                    new_discovered_peers.update(discovered_peers)
+                    self.peers.update(received_peers)
+                    print(f"[+] Registered with {peer_url} — got {len(received_peers)} new peers")
+            except Exception as e:
+                print(f"[!] Failed to register with {peer_url}: {e}")
+
+        # Recursive step: try registering with newly discovered peers
+        for new_peer in new_discovered_peers:
+            if new_peer != self.node_url:
+                try:
+                    res = requests.post(f"{new_peer}/register", json={"peer": self.node_url})
+                    if res.status_code == 200:
+                        received_peers = set(res.json().get("peers", []))
+                        self.peers.update(received_peers)
+                        print(f"[+] Recursively registered with {new_peer}")
+                except Exception as e:
+                    print(f"[!] Failed to register with {new_peer}: {e}")
 
 
-    # Sync with other nodes
+    # Sync chain with other nodes
     def sync_chain(self):
         longest_chain = self.blockchain.chain
         for peer in self.peers:
+            # Skip self node
+            if peer == self.node_url:
+                continue  # 🔁 Skip self
             print(f"Syncing with {peer}...")
             try:
                 res = requests.get(f"{peer}/chain", timeout=3)
@@ -94,7 +153,7 @@ class ClientNode:
 
         # Mine and save the new block
         latest_block = self.blockchain.get_latest_block()
-        data = f"Mined by client {self.client_id}"
+        data = f"Mined by {self.client_id}"
         new_block = Block(
             index=len(self.blockchain.chain),
             previous_hash=latest_block.hash,
@@ -108,6 +167,7 @@ class ClientNode:
         # Broadcast the new block to peers
         print(f"✅ Mined block {new_block.index} with hash: {new_block.hash}. Broadcasting...")
         self.broadcast_block(new_block)
+        self.broadcast_to_subscribers(new_block)
         return new_block
 
     
@@ -124,6 +184,6 @@ class ClientNode:
                 print(f"Error sending block to {peer}: {e}")
 
     def run(self):
-        self.register()
-        self.sync_chain()
-        self.app.run(port=self.port)
+        # self.register()
+        # self.sync_chain()
+        self.app.run(port=self.port, debug=True, threaded=True)
