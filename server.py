@@ -1,7 +1,5 @@
 from flask import Flask, request, Response, jsonify, render_template
 import queue
-import time
-import threading
 from threading import Lock
 from blockchain import Blockchain
 from block import Block
@@ -9,12 +7,13 @@ from block import Block
 subscribers = []
 app = Flask(__name__)
 chain_lock = Lock()  # Prevent race conditions
+peers = set()   # set of peers (nodes in future)
 
 blockchain = Blockchain()
 # blockchain.add_block("Genesis Block")  # Only if your chain starts empty
 
 # Notify subscribers about new block
-def broadcast_new_block(block):
+def broadcast_to_subscribers(block):
     data = f"New block #{block.index} added!"
     for q in subscribers:
         q.put(data)
@@ -61,7 +60,7 @@ def receive_mined_block():
         blockchain.chain.append(received_block)
         blockchain.save_chain()
         print(f"✅ Block {received_block.index} accepted from client")
-        broadcast_new_block(received_block)
+        broadcast_to_subscribers(received_block)
         return jsonify(received_block.to_dict()), 201
 
 @app.route('/view')
@@ -82,6 +81,22 @@ def stream():
             subscribers.remove(q)
 
     return Response(event_stream(), content_type='text/event-stream')
+
+# Endpoint to register a new peer
+@app.route('/register', methods=['POST'])
+def register_peer():
+    data = request.get_json()
+    peer = data.get('peer')
+    if peer and (peer not in peers):
+        peers.add(peer)
+        print(f"Registered new peer: {peer}")
+        return jsonify({'message': 'Peer registered successfully.'}), 200
+    return jsonify({'error': 'No peer provided.'}), 400
+
+# Returns json list of registered peers
+@app.route('/peers', methods=['GET'])
+def get_peers():
+    return jsonify(sorted(list(peers))), 200
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True, threaded=True)
