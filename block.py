@@ -1,22 +1,31 @@
 import hashlib
 import time
+import json
 
 # Block class with PoW
 class Block:
-    def __init__(self, index, previous_hash, transactions, difficulty=2, timestamp=None, nonce=0, hash=None):
+    def __init__(self, index, previous_hash, transactions, difficulty=5, timestamp=None, nonce=0, hash=None):
         self.index = index
         self.previous_hash = previous_hash
-        self.transactions = transactions
         self.timestamp = timestamp or time.time()
-        self.nonce = nonce
+        self.transactions = transactions
         self.difficulty = difficulty  # Number of leading zeros required in hash
+        self.nonce = nonce
         self.hash = hash or self.calculate_hash()
 
     def calculate_hash(self):
         """Returns SHA-256 hash of block data."""
-        value = f"{self.index}{self.previous_hash}{self.transactions}{self.timestamp}{self.nonce}"
-        return hashlib.sha256(value.encode()).hexdigest()
-
+        block_dict = {
+            "index": self.index,
+            "previous_hash": self.previous_hash,
+            "timestamp": self.timestamp,
+            "transactions": self.transactions,
+            "difficulty": self.difficulty,  # <-- this is important
+            "nonce": self.nonce
+        }
+        block_string = json.dumps(block_dict, sort_keys=True).encode()
+        return hashlib.sha256(block_string).hexdigest()
+    
     def mine_block(self):
         """Proof of Work: Adjust nonce until hash meets difficulty criteria."""
         prefix = '0' * self.difficulty
@@ -29,9 +38,9 @@ class Block:
         return {
             'index': self.index,
             'previous_hash': self.previous_hash,
+            'timestamp': self.timestamp,
             'transactions': self.transactions,
             'difficulty': self.difficulty,
-            'timestamp': self.timestamp,
             'nonce': self.nonce,
             'hash': self.hash
         }
@@ -41,9 +50,9 @@ class Block:
         return Block(
             index=data['index'],
             previous_hash=data['previous_hash'],
-            transactions=data['transactions'],
-            difficulty=data.get('difficulty', 2),
             timestamp=data['timestamp'],
+            transactions=data['transactions'],
+            difficulty=data['difficulty'],
             nonce=data['nonce'],
             hash=data['hash']
         )

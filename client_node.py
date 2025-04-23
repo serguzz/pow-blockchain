@@ -11,10 +11,16 @@ class ClientNode:
         self.subscribers = []
         self.peers = set(peers or [])  # Start with known peers
         self.app = Flask(__name__, template_folder='templates')
+
+        # ✅ Initialize blockchain first
+        self.blockchain = Blockchain(client_id=client_id)
+
         self.setup_routes()
         self.register_with_peers()
-        self.blockchain = Blockchain(client_id=client_id)
         self.sync_chain()
+        print(f"Created chain: {self.blockchain.chain}")
+        print(f"Init block hash: {self.blockchain.chain[0].hash}")
+        print(f"Init block calculated hash: {self.blockchain.chain[0].calculate_hash()}")
 
     def setup_routes(self):
         @self.app.route('/')
@@ -93,6 +99,7 @@ class ClientNode:
 
     def register_with_peers(self):
         known_peers = set(self.peers)
+        print(f"Known peers: {known_peers}")
         new_discovered_peers = set()
 
         for peer_url in list(known_peers):
@@ -132,12 +139,25 @@ class ClientNode:
                 res = requests.get(f"{peer}/chain", timeout=3)
                 remote_chain_data = res.json()
                 remote_chain = [Block.from_dict(b) for b in remote_chain_data]
+                
+                print (f"Remote chain: {remote_chain}")
+                
+                # Validate the remote chain
+                if not remote_chain:
+                    print(f"Empty chain from {peer}")
+                    continue
+                elif not self.blockchain.validate_chain(remote_chain):
+                    print(f"Invalid chain from {peer}: malformed")
+                    continue
 
                 if len(remote_chain) > len(longest_chain):
                     longest_chain = remote_chain
                 elif len(remote_chain) == len(longest_chain):
-                    if remote_chain[-1].hash < longest_chain[-1].hash:
+                    # Choose the chain with the earliest timestamp
+                    if remote_chain[-1].timestamp < longest_chain[-1].timestamp:
                         longest_chain = remote_chain
+                    # Alternatively, you can compare the hashes of the last blocks
+                    # if remote_chain[-1].hash < longest_chain[-1].hash:
             except Exception as e:
                 print(f"Could not sync with {peer}: {e}")
 
@@ -186,4 +206,4 @@ class ClientNode:
     def run(self):
         # self.register()
         # self.sync_chain()
-        self.app.run(port=self.port, debug=True, threaded=True)
+        self.app.run(port=self.port, debug=False, threaded=True)
