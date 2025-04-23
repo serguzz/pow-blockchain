@@ -23,17 +23,17 @@ This is a **testnet-style blockchain simulation** where multiple client nodes mi
 ## 📁 Structure
 
 blockchain/ 
-├── block.py # Block class 
-├── blockchain.py # Blockchain class 
-├── client_node.py # ClientNode class (each node runs Flask) 
-├── genesis_node.py # Genesis node (optional) 
-├── blockchain/ 
-│ └── blockchain.csv # Persistent chain storage 
+├── block.py # Block class
+├── blockchain.py # Blockchain class
+├── client_node.py # ClientNode class (each node runs Flask)
+├── genesis_node.py # Genesis node (optional)
+├── blockchain/
+│ └── blockchain.csv # Persistent chain storage
 ├── static/
-│ └── main.js # JS logic (buttons, SSE) 
-├── templates/ 
-│ └── index.html # UI layout 
-├── run_client.sh # Bash script to start new node 
+│ └── main.js # JS logic (buttons, SSE)
+├── templates/
+│ └── index.html # UI layout
+├── run_client.sh # Bash script to start new node
 ├── README.md
 
 
@@ -51,7 +51,7 @@ python3 server.py
 ### 🧑‍💻 Start a Genesis Node
 
 ```bash
-python3 server.py
+python3 genesis_node.py
 ```
 
 The genesis node creates the initial blockchain and exposes `/register`, `/peers`, and `/chain` endpoints.
@@ -63,7 +63,7 @@ Accessible at: [http://localhost:5000](http://localhost:5000)
 ### ➕ Start a New Client Node
 
 ```bash
-python3 client_node.py --port 5001 --peers http://localhost:5000
+python3 client_node.py --port 5001 --peers http://localhost:5001
 ```
 
 - Replace `5001` with any available port.
