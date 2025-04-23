@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Client {{ client_id }}</title>
+</head>
+<body>
+  <h2>Client {{ client_id }}</h2>
+  <button onclick="mine()">⛏️ Mine Block</button>
+  <p id="status"></p>
+
+  <script>
+    function mine() {
+      fetch('/mine', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => document.getElementById('status').innerText = data.message || data.error)
+        .catch(err => console.error(err));
+    }
+  </script>
+</body>
+</html>

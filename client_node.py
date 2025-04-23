@@ -1,17 +1,32 @@
 import requests
-from flask import Flask
+from flask import Flask, render_template, jsonify
 from blockchain import Blockchain, Block
 
 class ClientNode:
     def __init__(self, client_id, port, server_url="http://localhost:5000"):
         self.client_id = client_id
         self.port = port
+        self.server_url = server_url
         self.peers = set([server_url])  # Start with main server
-        self.app = Flask(__name__)
+        self.app = Flask(__name__, template_folder='templates')
         self.setup_routes()
         self.blockchain = Blockchain(client_id=client_id)
 
     def setup_routes(self):
+        @self.app.route('/')
+        def home():
+            return render_template('index.html', client_id=self.client_id)
+
+        # Route to mine a block
+        @self.app.route('/mine', methods=['POST'])
+        def mine():
+            try:
+                new_block = self.mine_block()
+                return jsonify({"message": f"Block {new_block.index} mined and broadcast!"})
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+
+        # Route to receive block from other nodes
         @self.app.route('/receive_block', methods=['POST'])
         def receive_block():
             from flask import request, jsonify
@@ -39,7 +54,7 @@ class ClientNode:
     # Register Node with the main server
     def register(self):
         try:
-            res = requests.post("http://localhost:5000/register", json={
+            res = requests.post(f"{self.server_url}/register", json={
                 "client_id": self.client_id,
                 "url": f"http://localhost:{self.port}"
             })
@@ -74,21 +89,26 @@ class ClientNode:
 
 
     def mine_block(self):
-        latest = self.blockchain.get_latest_block()
+        print("⏳ Syncing with peers before mining...")
+        self.sync_chain()  # make sure this fetches the longest valid chain
+
+        # Mine and save the new block
+        latest_block = self.blockchain.get_latest_block()
         data = f"Mined by client {self.client_id}"
         new_block = Block(
             index=len(self.blockchain.chain),
-            previous_hash=latest.hash,
+            previous_hash=latest_block.hash,
             transactions=[data],
             difficulty=self.blockchain.difficulty
         )
         new_block.mine_block()
-
         self.blockchain.chain.append(new_block)
         self.blockchain.save_chain()
-        print(f"Block {new_block.index} mined. Broadcasting...")
 
+        # Broadcast the new block to peers
+        print(f"✅ Mined block {new_block.index} with hash: {new_block.hash}. Broadcasting...")
         self.broadcast_block(new_block)
+        return new_block
 
     
     def broadcast_block(self, block):
