@@ -4,8 +4,8 @@ import pandas as pd
 
 # Blockchain class - the sequence of blocks
 class Blockchain:
-    difficulty = 5  # difficulty of the genesis Block
-    def __init__(self, client_id=None, difficulty=5):  # Set default difficulty to 4
+    difficulty = 1  # difficulty of the genesis Block
+    def __init__(self, client_id=None, difficulty=1):  # Set default difficulty to 4
         self.client_id = client_id or "default"
         self.difficulty = difficulty  # Initialize difficulty
         self.chain = []
@@ -77,20 +77,28 @@ class Blockchain:
     def add_block(self, transactions):
         """Adds a new block with PoW to the blockchain."""
         latest_block = self.get_latest_block()
+        if latest_block.hash != latest_block.calculate_hash():
+            print("Block cannot be added: latest block hash does not match calculated hash")
+            print(f"Latest block hash: {latest_block.hash}")
+            print(f"Calculated hash: {latest_block.calculate_hash()}")
+            return None
         new_block = Block(len(self.chain), latest_block.hash, transactions, self.difficulty)
         new_block.mine_block()
         self.chain.append(new_block)
         self.save_chain()  # <-- Save on every new block
-        print(f"Block {new_block.index} mined with hash: {new_block.hash}")
+        print(f"Block {new_block.index} mined with hash: {new_block.hash} and calculated hash: {new_block.calculate_hash()}")
         return new_block
     
     def validate_block(self, block, previous_block):
         """Validates the block against the previous block."""
         if block.index != previous_block.index + 1:
+            print(f"Block index {block.index} is not in order with previous block index {previous_block.index}")
             return False
         if block.previous_hash != previous_block.hash:
+            print(f"Block previous hash {block.previous_hash} does not match previous block hash {previous_block.hash}")
             return False
         if block.hash != block.calculate_hash():
+            print(f"Block hash {block.hash} does not match calculated hash {block.calculate_hash()}")
             return False
         if block.timestamp <= previous_block.timestamp:
             print("Block time is not in order")

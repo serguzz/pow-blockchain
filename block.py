@@ -4,7 +4,7 @@ import json
 
 # Block class with PoW
 class Block:
-    def __init__(self, index, previous_hash, transactions, difficulty=5, timestamp=None, nonce=0, hash=None):
+    def __init__(self, index, previous_hash, transactions, difficulty=1, timestamp=None, nonce=0, hash=None):
         self.index = index
         self.previous_hash = previous_hash
         self.timestamp = timestamp or time.time()
@@ -23,8 +23,12 @@ class Block:
             "difficulty": self.difficulty,  # <-- this is important
             "nonce": self.nonce
         }
+        print(f"Calculating hash for block: {block_dict}")
         block_string = json.dumps(block_dict, sort_keys=True).encode()
-        return hashlib.sha256(block_string).hexdigest()
+        result = hashlib.sha256(block_string).hexdigest()
+        print(f"Hash calculated: {result}")
+        return result
+        # return hashlib.sha256(block_string).hexdigest()
     
     def mine_block(self):
         """Proof of Work: Adjust nonce until hash meets difficulty criteria."""

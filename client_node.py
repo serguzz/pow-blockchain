@@ -172,6 +172,9 @@ class ClientNode:
         self.sync_chain()  # make sure this fetches the longest valid chain
 
         # Mine and save the new block
+        data = f"Mined by {self.client_id}"
+        new_block = self.blockchain.add_block(data)
+        '''
         latest_block = self.blockchain.get_latest_block()
         data = f"Mined by {self.client_id}"
         new_block = Block(
@@ -183,9 +186,9 @@ class ClientNode:
         new_block.mine_block()
         self.blockchain.chain.append(new_block)
         self.blockchain.save_chain()
-
+        '''
         # Broadcast the new block to peers
-        print(f"✅ Mined block {new_block.index} with hash: {new_block.hash}. Broadcasting...")
+        print(f"✅ Mined block {new_block.index} with hash: {new_block.hash} and calculated hash: {new_block.calculate_hash()}. Broadcasting...")
         self.broadcast_block(new_block)
         self.broadcast_to_subscribers(new_block)
         return new_block
