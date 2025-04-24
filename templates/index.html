@@ -6,9 +6,9 @@
   <script src="{{ url_for('static', filename='main.js') }}"></script>
 </head>
 <body class="p-4">
-  <h2 class="mb-4">🧪 Blockchain Playground {{ client_id }}</h2>
+  <h2 class="mb-4" style="font-weight: bold;"> {{ client_id }} 🧪 Blockchain Playground</h2>
 
-  <div class="btn-group mb-3">
+  <div class="btn-group mb-3" style="position:sticky; top: 0; right: 0; z-index: 1000;">
     <button onclick="mineBlock()" class="btn btn-success">⛏️ Mine Block</button>
     <button onclick="syncChain()" class="btn btn-warning">🔄 Sync Chain</button>
     <button onclick="fetchChain()" class="btn btn-info">⛓️ View Chain</button>
@@ -16,7 +16,7 @@
   </div>
 
   <h5>📢 Live Updates:</h5>
-  <pre id="log" style="background:#f8f9fa; padding:1em; max-height:300px; overflow:auto;"></pre>
+  <pre id="log" style="background:#f8f9fa; padding:1em; max-height:250px; overflow:auto;"></pre>
 
   <h5 class="mt-4">⛓️ Blockchain:</h5>
   <pre id="chain" style="background:#f1f1f1; padding:1em; max-height:400px; overflow:auto;"></pre>
@@ -48,6 +48,7 @@
       .block p {
           margin: 5px 0;
       }
+
   </style>
   
 </body>

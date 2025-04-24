@@ -4,14 +4,6 @@ function log(msg) {
     el.scrollTop = el.scrollHeight;
 }
 
-function mine() {
-  fetch('/mine', { method: 'POST' })
-    .then(res => res.json())
-    .then(data => document.getElementById('status').innerText = data.message || data.error)
-    .catch(err => console.error(err));
-  fetchChain();
-}
-
 function mineBlock() {
     fetch('/mine', { method: 'POST' })
         .then(res => res.json())
@@ -54,6 +46,7 @@ function renderChain(chainData) {
         </div>`;
         chainContainer.innerHTML += blockHTML;
     });
+    chainContainer.scrollTop = chainContainer.scrollHeight;
 }
 
 function fetchPeers() {
@@ -65,11 +58,13 @@ function fetchPeers() {
 function startSSE() {
     const source = new EventSource('/stream');
     source.onmessage = (e) => {
-        log("📥 " + e.data);
-        if (e.data.includes("accepted from node")) {
+        msg = e.data;
+        log("📥 " + msg);
+        if (msg.includes("accepted from node") || msg.includes("added")) {
             fetchChain();  // 🟢 re-fetch the chain from backend
         }
     }
+    fetchChain();  // 🟢 fetch the chain on load
 
 }
 
