@@ -9,12 +9,14 @@ function mine() {
     .then(res => res.json())
     .then(data => document.getElementById('status').innerText = data.message || data.error)
     .catch(err => console.error(err));
+  fetchChain();
 }
 
 function mineBlock() {
     fetch('/mine', { method: 'POST' })
         .then(res => res.json())
         .then(data => log(data.message))
+        .then(() => fetchChain())
         .catch(err => log("❌ Error mining: " + err));
 }
 
@@ -22,6 +24,7 @@ function syncChain() {
     fetch('/sync', { method: 'POST' })
         .then(res => res.json())
         .then(data => log(data.message || "Synced."))
+        .then(() => fetchChain())
         .catch(err => log("❌ Error syncing: " + err));
 }
 

@@ -23,10 +23,10 @@ class Block:
             "difficulty": self.difficulty,  # <-- this is important
             "nonce": self.nonce
         }
-        print(f"Calculating hash for block: {block_dict}")
+        # print(f"Calculating hash for block: {block_dict}")
         block_string = json.dumps(block_dict, sort_keys=True).encode()
         result = hashlib.sha256(block_string).hexdigest()
-        print(f"Hash calculated: {result}")
+        # print(f"Hash calculated: {result}")
         return result
         # return hashlib.sha256(block_string).hexdigest()
     

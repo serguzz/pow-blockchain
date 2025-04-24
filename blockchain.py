@@ -74,7 +74,7 @@ class Blockchain:
     def get_latest_block(self):
         return self.chain[-1]
 
-    def add_block(self, transactions):
+    def mine_block(self, transactions):
         """Adds a new block with PoW to the blockchain."""
         latest_block = self.get_latest_block()
         if latest_block.hash != latest_block.calculate_hash():
