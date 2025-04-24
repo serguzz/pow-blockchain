@@ -5,7 +5,7 @@ import pandas as pd
 # Blockchain class - the sequence of blocks
 class Blockchain:
     difficulty = 1  # difficulty of the genesis Block
-    def __init__(self, client_id=None, difficulty=1):  # Set default difficulty to 4
+    def __init__(self, client_id=None, difficulty=5):  # Set default difficulty to 4
         self.client_id = client_id or "default"
         self.difficulty = difficulty  # Initialize difficulty
         self.chain = []

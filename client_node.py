@@ -80,7 +80,7 @@ class ClientNode:
                 self.blockchain.chain.append(block)
                 print(f"Block {block.index} accepted from {miner}.")                
                 self.blockchain.save_chain()
-                self.broadcast_to_subscribers(block)  # broadcast to frontend subscribers
+                self.broadcast_to_subscribers(block, miner)  # broadcast to frontend subscribers
                 return jsonify({'message': 'Block added'}), 200
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
@@ -121,10 +121,21 @@ class ClientNode:
             return Response(event_stream(), content_type='text/event-stream')
 
     # Notify subscribers about new block
-    def broadcast_to_subscribers(self, block):
-        data = f"New block #{block.index} added!"
+    def broadcast_to_subscribers(self, block, source=None):
+        message = f"✅ Block {block.index} accepted from node: {source}" if source else f"✅ Block {block.index} added"
         for q in self.subscribers:
-            q.put(data)
+            try:
+                q.put(message)
+            except:
+                continue
+
+    # Broadcast message to subscribers            
+    def broadcast_message(self, message):
+        for q in self.subscribers:
+            try:
+                q.put(message)
+            except:
+                continue
 
     def register_with_peers(self):
         known_peers = set(self.peers)
@@ -209,6 +220,7 @@ class ClientNode:
         self.sync_chain()  # make sure this fetches the longest valid chain
 
         # Mine and save the new block
+        self.broadcast_message(f"⛏️  Mining block...")
         data = f"Mined by {self.client_id}"
         new_block = self.blockchain.mine_block(data)
 

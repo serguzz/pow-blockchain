@@ -64,7 +64,13 @@ function fetchPeers() {
 
 function startSSE() {
     const source = new EventSource('/stream');
-    source.onmessage = (e) => log("📥 " + e.data);
+    source.onmessage = (e) => {
+        log("📥 " + e.data);
+        if (e.data.includes("accepted from node")) {
+            fetchChain();  // 🟢 re-fetch the chain from backend
+        }
+    }
+
 }
 
 window.onload = startSSE;
