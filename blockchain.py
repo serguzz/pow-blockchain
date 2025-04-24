@@ -5,7 +5,7 @@ import pandas as pd
 # Blockchain class - the sequence of blocks
 class Blockchain:
     difficulty = 1  # difficulty of the genesis Block
-    def __init__(self, client_id=None, difficulty=5):  # Set default difficulty to 4
+    def __init__(self, client_id=None, difficulty=3):  # Set default difficulty to 4
         self.client_id = client_id or "default"
         self.difficulty = difficulty  # Initialize difficulty
         self.chain = []
@@ -74,7 +74,7 @@ class Blockchain:
     def get_latest_block(self):
         return self.chain[-1]
 
-    def mine_block(self, transactions):
+    def mine_block(self, transactions, stop_event=None):
         """Adds a new block with PoW to the blockchain."""
         latest_block = self.get_latest_block()
         if latest_block.hash != latest_block.calculate_hash():
@@ -83,14 +83,23 @@ class Blockchain:
             print(f"Calculated hash: {latest_block.calculate_hash()}")
             return None
         index = latest_block.index + 1  # or len(self.chain)
-        new_block = Block(index, latest_block.hash, transactions, self.difficulty)
-        new_block.mine_block()
+        dificulty = max(latest_block.difficulty, self.difficulty)
+        
+        new_block = Block(index, latest_block.hash, transactions, dificulty)
+        new_hash = new_block.mine_block(stop_event=stop_event)
+        if new_hash is None:
+            print("Mining was interrupted on blockchain level.")
+            return None
         while new_block.hash != new_block.calculate_hash():
             print(f"After mining block {new_block.index} has incorrect hash. Repeating mining...")
-            new_block.mine_block()
+            new_hash = new_block.mine_block(stop_event=stop_event)
+            if new_hash is None:
+                print("⛔ Mining interrupted on blockchain level.")
+                return None
+            
         self.chain.append(new_block)
         self.save_chain()  # <-- Save on every new block
-        print(f"Block {new_block.index} mined with hash: {new_block.hash} and calculated hash: {new_block.calculate_hash()}")
+        # print(f"Block {new_block.index} mined with hash: {new_block.hash} and calculated hash: {new_block.calculate_hash()}")
         return new_block
     
     def validate_block(self, block, previous_block):
@@ -140,7 +149,7 @@ class Blockchain:
             return False
         
         for i in range(1, len(chain)):
-            print(f"Validating block {i} against block {i-1}")
+            # print(f"Validating block {i} against block {i-1}")
             if not self.validate_block(chain[i], chain[i - 1]):
                 print(f"Block {i} is invalid")
                 return False

@@ -1,5 +1,6 @@
 import requests
 import queue
+from threading import Thread, Event
 from flask import Flask, render_template, jsonify, request, Response
 from urllib.parse import urlparse
 from blockchain import Blockchain, Block
@@ -10,8 +11,12 @@ class ClientNode:
         self.port = port
         self.node_url = f"http://localhost:{port}"
         self.subscribers = []
+        self.stop_event = None  # Event to stop mining thread if needed
         self.peers = set(peers or [])  # Start with known peers
         self.app = Flask(__name__, template_folder='templates')
+
+        self.is_mining = False
+        self.mining_thread = None
 
         # ✅ Initialize blockchain first
         self.blockchain = Blockchain(client_id=client_id)
@@ -40,7 +45,8 @@ class ClientNode:
         @self.app.route('/mine', methods=['POST'])
         def mine():
             try:
-                new_block = self.mine_block()
+                # new_block = self.mine_block()
+                new_block = self.start_mining()
                 return jsonify({"message": f"Block {new_block.index} mined and broadcast!"})
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
@@ -48,7 +54,6 @@ class ClientNode:
         # Route to receive block from other nodes
         @self.app.route('/receive_block', methods=['POST'])
         def receive_block():
-            # from flask import request, jsonify
             data = request.get_json()
             miner = data.get("miner")
             block_data = data.get("block")
@@ -77,11 +82,23 @@ class ClientNode:
                 if block.difficulty < latest.difficulty:
                     return jsonify({'error': 'Difficulty too low'}), 400
 
+                # stop mining if valid block received
+                if hasattr(self, 'stop_event'):
+                    self.stop_event.set()
+                    print("🛑 Valid incoming block! Any mining will be stopped.")
+                '''    
+                self.is_mining = False
+                if self.mining_thread and self.mining_thread.is_alive():
+                    self.mining_thread.join(timeout=1)
+                '''
+
+                # Now safely add the received block to the chain
                 self.blockchain.chain.append(block)
                 print(f"Block {block.index} accepted from {miner}.")                
                 self.blockchain.save_chain()
                 self.broadcast_to_subscribers(block, miner)  # broadcast to frontend subscribers
                 return jsonify({'message': 'Block added'}), 200
+
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
 
@@ -212,23 +229,40 @@ class ClientNode:
             self.blockchain.chain = longest_chain
             self.blockchain.save_chain()
             print(f"[{self.client_id}] Chain updated from peers.")
+            self.broadcast_message(f"✅ Chain updated from peers.")
         else:
             print(f"[{self.client_id}] No updates from peers. Current chain is up to date.")
+            self.broadcast_message(f"✅ No updates from peers. Current chain is up to date.")
 
-    def mine_block(self):
-        print("⏳ Syncing with peers before mining...")
-        self.sync_chain()  # make sure this fetches the longest valid chain
+    # Mining in a separate thread
+    def start_mining(self):
+        def mine_block():
+            self.is_mining = True
+            self.stop_event = Event()
+            self.stop_event.clear()
 
-        # Mine and save the new block
-        self.broadcast_message(f"⛏️  Mining block...")
-        data = f"Mined by {self.client_id}"
-        new_block = self.blockchain.mine_block(data)
+            self.broadcast_message("⏳ Syncing with peers before mining...")
+            self.sync_chain()  # make sure this fetches the longest valid chain
 
-        # Broadcast the new block to peers
-        print(f"✅ Mined block {new_block.index} with hash: {new_block.hash} and calculated hash: {new_block.calculate_hash()}. Broadcasting...")
-        self.broadcast_block(new_block)
-        self.broadcast_to_subscribers(new_block)
-        return new_block
+            # Mine and save the new block
+            self.broadcast_message(f"⛏️  Mining block...")
+            data = f"Mined by {self.client_id}"
+            new_block = self.blockchain.mine_block(data, stop_event=self.stop_event)
+
+            # Broadcast the new block to peers
+            if new_block is None:
+                print("⛔ Mining interrupted on Node level!")
+                self.broadcast_message("⛔ Mining interrupted on receiving a valid block!")
+                self.is_mining = False
+                return None
+            # print(f"✅ Mined block {new_block.index} with hash: {new_block.hash} and calculated hash: {new_block.calculate_hash()}. Broadcasting...")
+            self.broadcast_block(new_block)
+            self.broadcast_to_subscribers(new_block)
+            self.is_mining = False  # Stop mining after broadcasting
+            # return new_block
+        self.mining_thread = Thread(target=mine_block)
+        self.mining_thread.start()
+
 
     
     def broadcast_block(self, block=None):

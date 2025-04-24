@@ -30,10 +30,13 @@ class Block:
         return result
         # return hashlib.sha256(block_string).hexdigest()
     
-    def mine_block(self):
+    def mine_block(self, stop_event=None):
         """Proof of Work: Adjust nonce until hash meets difficulty criteria."""
         prefix = '0' * self.difficulty
         while not self.hash.startswith(prefix):
+            if stop_event and stop_event.is_set():
+                print("⛔ Mining interrupted on Block level!")
+                return None
             self.nonce += 1
             self.hash = self.calculate_hash()
         return self.hash
