@@ -51,7 +51,7 @@ class Block:
     
     @staticmethod
     def from_dict(data):
-        return Block(
+        block = Block(
             index=data['index'],
             previous_hash=data['previous_hash'],
             timestamp=data['timestamp'],
@@ -60,3 +60,7 @@ class Block:
             nonce=data['nonce'],
             hash=data['hash']
         )
+        if block.hash != block.calculate_hash():
+            print(f"Invalid block {block.index} from dictionary: hash does not match calculated hash.")
+            return None
+        return block

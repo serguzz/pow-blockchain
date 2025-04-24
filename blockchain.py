@@ -82,8 +82,12 @@ class Blockchain:
             print(f"Latest block hash: {latest_block.hash}")
             print(f"Calculated hash: {latest_block.calculate_hash()}")
             return None
-        new_block = Block(len(self.chain), latest_block.hash, transactions, self.difficulty)
+        index = latest_block.index + 1  # or len(self.chain)
+        new_block = Block(index, latest_block.hash, transactions, self.difficulty)
         new_block.mine_block()
+        while new_block.hash != new_block.calculate_hash():
+            print(f"After mining block {new_block.index} has incorrect hash. Repeating mining...")
+            new_block.mine_block()
         self.chain.append(new_block)
         self.save_chain()  # <-- Save on every new block
         print(f"Block {new_block.index} mined with hash: {new_block.hash} and calculated hash: {new_block.calculate_hash()}")
