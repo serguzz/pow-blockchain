@@ -7,7 +7,7 @@ class Block:
     def __init__(self, index, previous_hash, transactions, difficulty=1, timestamp=None, nonce=0, hash=None):
         self.index = index
         self.previous_hash = previous_hash
-        self.timestamp = timestamp or time.time()
+        self.timestamp = round(timestamp or time.time(), 6)
         self.transactions = transactions
         self.difficulty = difficulty  # Number of leading zeros required in hash
         self.nonce = nonce
@@ -54,7 +54,8 @@ class Block:
         block = Block(
             index=data['index'],
             previous_hash=data['previous_hash'],
-            timestamp=data['timestamp'],
+            # timestamp=round(data['timestamp'], 6),
+            timestamp=data['timestamp'], # Assume timestamp is already rounded
             transactions=data['transactions'],
             difficulty=data['difficulty'],
             nonce=data['nonce'],
