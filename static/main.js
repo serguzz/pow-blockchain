@@ -55,6 +55,14 @@ function fetchPeers() {
         .then(data => log("Known peers: " + JSON.stringify(data.peers)));
 }
 
+// Load saved theme or default to dark
+function setDarkTheme() {
+    const theme = localStorage.getItem('theme') || 'dark';
+    localStorage.setItem('theme', theme);
+    document.body.classList.add(theme + '-theme');
+    document.getElementById('themeToggle').checked = theme === 'dark';
+}
+
 function startSSE() {
     const source = new EventSource('/stream');
     source.onmessage = (e) => {
@@ -65,16 +73,7 @@ function startSSE() {
         }
     }
     fetchChain();  // 🟢 fetch the chain on load
-
-  // Load saved theme or default to dark
-  document.addEventListener("DOMContentLoaded", function () {
-      const theme = localStorage.getItem('theme') || 'light';
-      localStorage.setItem('theme', theme);
-      document.body.classList.add(theme + '-theme');
-      const toggle = document.getElementById('themeToggle');
-      document.getElementById('themeToggle').checked = theme === 'dark';
-      // toggle.checked = theme === 'dark';
-  });
+    setDarkTheme();
 
   // Toggle and save
   document.getElementById('themeToggle').addEventListener('change', function () {
@@ -90,6 +89,52 @@ function startSSE() {
       }
   });
 
+  document.getElementById('transactionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('transactionInput');
+    const value = input.value.trim();
+  
+    if (!value) return;
+  
+    const res = await fetch('/submit_transaction', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ transaction: value })
+    });
+  
+    const msg = await res.json();
+    // alert(msg.message || msg.error);
+  
+    input.value = '';
+    fetchTransactions();
+  });
+  
+  setInterval(fetchTransactions, 3000);
+  fetchTransactions();
+
+
 }
 
+async function fetchTransactions() {
+    const res = await fetch('/transactions');
+    const data = await res.json();
+  
+    const pendingList = document.getElementById('pendingTransactions');
+    pendingList.innerHTML = '';
+  
+    if (data.length === 0) {
+      pendingList.innerHTML = '<li>No pending transactions.</li>';
+      return;
+    }
+  
+    data.forEach(tx => {
+      // alert("Transaction: " + tx);
+      const li = document.createElement('li');
+      li.textContent = tx;
+      pendingList.appendChild(li);
+    });
+
+  }
+  
+// Initialize the app
 window.onload = startSSE;

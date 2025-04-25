@@ -15,6 +15,7 @@ class Node:
         self.peers = set(peers or [])  # Start with known peers
         self.app = Flask(__name__, template_folder='templates')
 
+        self.pending_transactions = []  # List to hold pending transactions
         self.is_mining = False
         self.mining_thread = None
 
@@ -30,6 +31,22 @@ class Node:
         def home():
             return render_template('index.html', node_id=self.node_id)
 
+        @self.app.route('/chain', methods=['GET'])
+        def get_chain():
+            return [block.__dict__ for block in self.blockchain.chain]
+        
+        @self.app.route('/peers', methods=['GET'])
+        def get_peers():
+            return jsonify({"peers": list(self.peers)})
+        
+        @self.app.route('/sync', methods=['POST'])
+        def sync():
+            try:
+                self.sync_chain()
+                return jsonify({"message": "Chain synced with peers!"})
+            except Exception as e:
+                    return jsonify({"error": str(e)}), 500
+
         # Route to register a new peer
         @self.app.route('/register', methods=['POST'])
         def register():
@@ -40,6 +57,33 @@ class Node:
                 self.peers.add(peer_url)
                 print(f"[+] New peer registered: {peer_url}")
             return jsonify({"peers": list(self.peers)})
+
+        @self.app.route('/transactions', methods=['GET'])
+        def get_transactions():
+            return jsonify(self.pending_transactions)
+
+        @self.app.route('/submit_transaction', methods=['POST'])
+        def submit_transaction():
+            tx_data = request.get_json()
+            tx = tx_data.get("transaction")
+            peer = tx_data.get("peer")
+            if peer and peer != self.node_url and peer not in self.peers:
+                print(f"[+] Discovered new peer (via transaction): {peer}")
+                self.broadcast_message(f"[+] Discovered new peer (when submitting transaction): {peer}")
+                self.peers.add(peer)
+            if tx:
+                if tx not in self.pending_transactions:
+                    self.broadcast_message(f"⛏️  New transaction submitted: {tx}")
+                    self.pending_transactions.append(tx)
+                    self.broadcast_transaction(tx)
+
+                    # ✅ If not already mining, start mining
+                    if not self.is_mining:
+                        print(f"⛏️  Starting mining on transaction received.")
+                        self.start_mining()
+                    return jsonify({'message': 'Transaction accepted'}), 200
+                return jsonify({'message': 'Duplicate transaction'}), 400
+            return jsonify({'error': 'Invalid transaction'}), 400
 
         # Route to mine a block
         @self.app.route('/mine', methods=['POST'])
@@ -94,6 +138,12 @@ class Node:
 
                 # Now safely add the received block to the chain
                 self.blockchain.chain.append(block)
+                # Parse block.transactions from string 'transactions' mined by ...
+                transactions_string = block.transactions
+                transactions = transactions_string.split("'")[1]  # Extract the transaction string
+                if transactions in self.pending_transactions:
+                    self.pending_transactions.remove(transactions)
+
                 print(f"Block {block.index} accepted from {miner}.")                
                 self.blockchain.save_chain()
                 self.broadcast_to_subscribers(block, miner)  # broadcast to frontend subscribers
@@ -101,22 +151,6 @@ class Node:
 
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
-
-        @self.app.route('/chain', methods=['GET'])
-        def get_chain():
-            return [block.__dict__ for block in self.blockchain.chain]
-        
-        @self.app.route('/peers', methods=['GET'])
-        def get_peers():
-            return jsonify({"peers": list(self.peers)})
-        
-        @self.app.route('/sync', methods=['POST'])
-        def sync():
-            try:
-                self.sync_chain()
-                return jsonify({"message": "Chain synced with peers!"})
-            except Exception as e:
-                    return jsonify({"error": str(e)}), 500
 
         @self.app.route('/stream')
         def stream():
@@ -241,7 +275,8 @@ class Node:
 
             # Mine and save the new block
             self.broadcast_message(f"⛏️  Mining block...")
-            data = f"Mined by {self.node_id}"
+            transactions_data = self.pending_transactions[0] if self.pending_transactions else "empty"
+            data = f"'{transactions_data}' mined by {self.node_id}"
             new_block = self.blockchain.mine_block(data, stop_event=self.stop_event)
 
             # Broadcast the new block to peers
@@ -249,17 +284,45 @@ class Node:
                 print("⛔ Mining interrupted on Node level!")
                 self.broadcast_message("⛔ Mining interrupted on receiving a valid block!")
                 self.is_mining = False
+                # TODO: if mining was interrupted, check if more transactions in the pool
+                # and start mining again
+                if self.pending_transactions:
+                    self.broadcast_message("🔁 More transactions in the pool. Starting mining again...")
+                    self.start_mining() # Recursive call to mine next block
                 return None
             # print(f"✅ Mined block {new_block.index} with hash: {new_block.hash} and calculated hash: {new_block.calculate_hash()}. Broadcasting...")
+            
+            if transactions_data in self.pending_transactions:
+                self.pending_transactions.remove(transactions_data)
             self.broadcast_block(new_block)
             self.broadcast_to_subscribers(new_block)
             self.is_mining = False  # Stop mining after broadcasting
+
+            # ✅ Check if more transactions are still in the pool
+            if self.pending_transactions:
+                self.broadcast_message("🔁 Continuing mining pending transactions...")
+                self.start_mining()  # Recursive call to mine next block
+
             # return new_block
         self.mining_thread = Thread(target=mine_block)
         self.mining_thread.start()
 
+    def broadcast_transaction(self, transaction):
+        payload = {
+            "transaction": transaction,
+            "peer": self.node_url
+        }
+        for peer in self.peers:
+            try:
+                r = requests.post(f"{peer}/submit_transaction", json=payload, timeout=2)
+                if r.ok:
+                    print(f"Sent transaction to {peer}")
+                else:
+                    print(f"{peer} rejected transaction: {r.text}")
+            except Exception as e:
+                print(f"Error sending transaction to {peer}: {e}")
 
-    
+
     def broadcast_block(self, block=None):
         block_data = block.__dict__
         payload = {

@@ -28,10 +28,26 @@
  
   <h2 class="mb-4 d-flex justify-content-between align-items-center" style="font-weight: bold;">
     <div>{{ node_id }}</div>
-  </h2>  
+  </h2>
 
-  <h5>📢 Live Updates:</h5>
-  <pre id="log" style="background:#878787; color:#fff; padding:1em; max-height:250px; overflow:auto;"></pre>
+  <h5 class="mt-4">📝 Submit a Transaction:</h5>
+  <form id="transactionForm">
+    <input type="text" id="transactionInput" placeholder="Transaction data" required />
+    <button type="submit">Submit</button>
+  </form>
+
+  <div style="display: flex; gap: 20px;">
+    <!-- Left: Pending Transactions -->
+    <div style="flex: 1;">
+      <h5 class="mt-4">🕒 Pending Transactions:</h5>
+      <ul id="pendingTransactions"></ul>
+    </div>
+    <!-- Right: Live Updates -->
+    <div style="flex: 1;">
+      <h5>📢 Live Updates:</h5>
+      <pre id="log" style="background:#878787; color:#fff; padding:1em; max-height:250px; overflow:auto;"></pre>
+    </div>
+  </div>
 
   <h5 class="mt-4">⛓️ Blockchain:</h5>
   <pre id="chain" style="background:#878787; color:#fff; padding:1em; max-height:400px; overflow:auto;"></pre>
@@ -59,6 +75,23 @@
     .dark-theme .block,
     .dark-theme pre {
         background-color: #3f3f3f;
+        color: #fff;
+    }
+
+    .dark-theme ul {
+        background-color: #3f3f3f;
+        color: #fff;
+        padding: 5px;
+        border-radius:5px;
+    }
+    .dark-theme li {
+        background-color: #3f3f3f;
+        color: #fff;
+        padding: 2px 5px;
+        border-radius:5px;
+    }
+    .dark-theme li:hover {
+        background-color: #4f4f4f;
         color: #fff;
     }
 
