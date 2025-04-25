@@ -117,11 +117,6 @@ class ClientNode:
                 return jsonify({"message": "Chain synced with peers!"})
             except Exception as e:
                     return jsonify({"error": str(e)}), 500
-        
-        @self.app.route('/view')
-        def view_chain():
-            chain_data = [block.to_dict() for block in self.blockchain.chain]
-            return render_template('viewer.html', chain=chain_data)
 
         @self.app.route('/stream')
         def stream():
