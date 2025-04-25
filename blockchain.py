@@ -5,8 +5,8 @@ import pandas as pd
 # Blockchain class - the sequence of blocks
 class Blockchain:
     difficulty = 1  # difficulty of the genesis Block
-    def __init__(self, client_id=None, difficulty=3):  # Set default difficulty to 4
-        self.client_id = client_id or "default"
+    def __init__(self, node_id=None, difficulty=3):  # Set default difficulty to 4
+        self.node_id = node_id or "default"
         self.difficulty = difficulty  # Initialize difficulty
         self.chain = []
         if os.path.exists(self.get_csv_path()):
@@ -18,7 +18,7 @@ class Blockchain:
             # print(f"Genesis block calculated hash: {self.chain[0].calculate_hash()}")
 
     def get_csv_path(self):
-        return f"blockchain/blockchain_{self.client_id}.csv"
+        return f"blockchain/blockchain_{self.node_id}.csv"
 
     def load_chain(self):
         """Load blockchain from CSV, or create genesis block if file is missing."""

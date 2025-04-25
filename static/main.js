@@ -60,7 +60,7 @@ function startSSE() {
     source.onmessage = (e) => {
         msg = e.data;
         log("📥 " + msg);
-        if (msg.includes("accepted from node") || msg.includes("added")) {
+        if (msg.includes("accepted from node") || msg.includes("mined, saved and broadcasted")) {
             fetchChain();  // 🟢 re-fetch the chain from backend
         }
     }

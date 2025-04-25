@@ -9,14 +9,15 @@ This is a **testnet-style blockchain simulation** where multiple client nodes mi
 ## 🧱 Features
 
 - ⛓️ **Blockchain logic**: blocks, PoW mining, difficulty validation
-- 🌐 **Client-server architecture** (or full P2P setup)
+- 🌐 **Full peer-2-peer architecture** - no head Node, all Nodes are equal
 - 📡 **Peer discovery** via `/register` and `/peers`
 - 🔁 **Block broadcasting** between nodes
 - 🧠 **Chain synchronization** (longest chain wins)
 - 💻 **Web UI** with real-time log (via SSE), mining button, chain view, and peer list
 - 📦 **Data persistence**: blockchain saved in `.csv`
-- 🧑‍🤝‍🧑 **Multiple clients** with separate blockchains
-- 🔐 **Future-ready**: transaction signatures, balances, conflict resolution
+- 🧑‍🤝‍🧑 **Multiple nodes** with separate blockchains
+- 🏁 **Mining race** Nodes can mine simultaneously, the fastest wins
+- 🔐 **Future-ready**: transaction signatures, balances, conflict resolutison
 
 ---
 
@@ -39,13 +40,6 @@ blockchain/
 ```
 
 ---
-
-## 🚀 Running It
-
-### 🧑‍💻 Start a Genesis Node
-
-```bash
-python3 server.py
 
 ## 🚀 Running It
 
@@ -80,6 +74,6 @@ You can run multiple client nodes in different terminals to simulate a peer netw
 Open your browser and visit a node’s web UI:
 
 - ⛏️ Click **Mine Block** to mine a new block.
-- 🔗 View local blockchain at `/view`
+- 🔗 View local blockchain at the home page
 - 📡 See connected peers
 - 📢 Watch live logs (via SSE) for block mining, syncing, and peer registration

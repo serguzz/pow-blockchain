@@ -5,9 +5,9 @@ from flask import Flask, render_template, jsonify, request, Response
 from urllib.parse import urlparse
 from blockchain import Blockchain, Block
 
-class ClientNode:
-    def __init__(self, client_id, port, peers=None):
-        self.client_id = client_id
+class Node:
+    def __init__(self, node_id, port, peers=None):
+        self.node_id = node_id
         self.port = port
         self.node_url = f"http://localhost:{port}"
         self.subscribers = []
@@ -19,7 +19,7 @@ class ClientNode:
         self.mining_thread = None
 
         # ✅ Initialize blockchain first
-        self.blockchain = Blockchain(client_id=client_id)
+        self.blockchain = Blockchain(node_id=node_id)
 
         self.setup_routes()
         self.register_with_peers()
@@ -28,7 +28,7 @@ class ClientNode:
     def setup_routes(self):
         @self.app.route('/')
         def home():
-            return render_template('index.html', client_id=self.client_id)
+            return render_template('index.html', node_id=self.node_id)
 
         # Route to register a new peer
         @self.app.route('/register', methods=['POST'])
@@ -134,7 +134,7 @@ class ClientNode:
 
     # Notify subscribers about new block
     def broadcast_to_subscribers(self, block, source=None):
-        message = f"✅ Block {block.index} accepted from node: {source}" if source else f"✅ Block {block.index} added"
+        message = f"✅ Block {block.index} accepted from node: {source}" if source else f"✅ Block {block.index} mined, saved and broadcasted."
         for q in self.subscribers:
             try:
                 q.put(message)
@@ -223,10 +223,10 @@ class ClientNode:
         if longest_chain != self.blockchain.chain:
             self.blockchain.chain = longest_chain
             self.blockchain.save_chain()
-            print(f"[{self.client_id}] Chain updated from peers.")
+            print(f"[{self.node_id}] Chain updated from peers.")
             self.broadcast_message(f"✅ Chain updated from peers.")
         else:
-            print(f"[{self.client_id}] No updates from peers. Current chain is up to date.")
+            print(f"[{self.node_id}] No updates from peers. Current chain is up to date.")
             self.broadcast_message(f"✅ No updates from peers. Current chain is up to date.")
 
     # Mining in a separate thread
@@ -241,7 +241,7 @@ class ClientNode:
 
             # Mine and save the new block
             self.broadcast_message(f"⛏️  Mining block...")
-            data = f"Mined by {self.client_id}"
+            data = f"Mined by {self.node_id}"
             new_block = self.blockchain.mine_block(data, stop_event=self.stop_event)
 
             # Broadcast the new block to peers

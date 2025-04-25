@@ -1,7 +1,7 @@
 from flask import jsonify
-from client_node import ClientNode
+from node import Node
 
-class GenesisNode(ClientNode):
+class GenesisNode(Node):
     def setup_routes(self):
         super().setup_routes()
 
@@ -12,5 +12,5 @@ class GenesisNode(ClientNode):
         # You could add special testing/debug endpoints here
 
 if __name__ == "__main__":
-    node = GenesisNode(client_id="genesis_node", port=5000)
+    node = GenesisNode(node_id="genesis_node", port=5000)
     node.run()
