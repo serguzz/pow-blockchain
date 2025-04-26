@@ -1,6 +1,8 @@
 function log(msg) {
     const el = document.getElementById("log");
-    el.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+    const now = new Date();
+    const time = now.toLocaleTimeString() + "." + now.getMilliseconds().toString().padStart(3, '0');
+    el.textContent += `[${time}] ${msg}\n`;
     el.scrollTop = el.scrollHeight;
 }
 
@@ -109,8 +111,8 @@ function startSSE() {
     fetchTransactions();
   });
   
-  setInterval(fetchTransactions, 3000);
-  fetchTransactions();
+  // setInterval(fetchTransactions, 3000);
+  // fetchTransactions();
 
 
 }
