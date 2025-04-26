@@ -111,9 +111,8 @@ function startSSE() {
     fetchTransactions();
   });
   
-  // setInterval(fetchTransactions, 3000);
-  // fetchTransactions();
-
+  setInterval(fetchTransactions, 3000);
+  fetchTransactions();
 
 }
 

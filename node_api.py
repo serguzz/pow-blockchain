@@ -110,7 +110,7 @@ class NodeAPI:
                     return jsonify({'error': 'Difficulty too low'}), 400
 
                 # stop mining if valid block received
-                if hasattr(self, 'stop_event'):
+                if hasattr(self.node, 'stop_event'):
                     self.node.stop_event.set()
                     print("🛑 Valid incoming block! Any mining will be stopped.")
                 '''    

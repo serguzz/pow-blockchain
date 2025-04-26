@@ -203,6 +203,6 @@ class Node:
                 print(f"Error sending block to {peer}: {e}")
 
     def run(self):
+        self.app.run(port=self.port, debug=False, threaded=True)
         # self.register()
         # self.sync_chain()
-        self.app.run(port=self.port, debug=False, threaded=True)
