@@ -29,13 +29,16 @@ class Node:
 
 
     # Notify subscribers about new block
+    '''
     def broadcast_to_subscribers(self, block, source=None):
-        message = f"✅ Block {block.index} accepted from node: {source}" if source else f"✅ Block {block.index} mined, saved and broadcasted."
-        for q in self.subscribers:
-            try:
-                q.put(message)
-            except:
-                continue
+        if not source:
+            message = f"✅ Block {block.index} mined, saved and broadcasted."
+            for q in self.subscribers:
+                try:
+                    q.put(message)
+                except:
+                    continue
+    '''
 
     # Broadcast message to subscribers            
     def broadcast_message(self, message):
@@ -44,14 +47,15 @@ class Node:
                 q.put(message)
             except:
                 continue
+    
 
+    # Register with known peers and discover new peers
+    # This is a recursive function that will keep trying to register with new peers
     def register_with_peers(self):
-        known_peers = set(self.peers)
-        print(f"Known peers: {known_peers}")
-        new_discovered_peers = set()
 
+        known_peers = set(self.peers)
+        new_discovered_peers = set()
         for peer_url in list(known_peers):
-            print(f"Registering with peer: {peer_url}")
             try:
                 res = requests.post(f"{peer_url}/register", json={"peer": self.node_url})
                 if res.status_code == 200:
@@ -64,14 +68,10 @@ class Node:
                 print(f"[!] Failed to register with {peer_url}: {e}")
 
         # Recursive step: try registering with newly discovered peers
-        print(f"Going to register with new discovered peers: {new_discovered_peers}")
         for new_peer in new_discovered_peers:
             if new_peer != self.node_url:
-                print(f"Registering with new peer: {new_peer}")
                 try:
-                    print(f"Sending registration to {new_peer}")
                     res = requests.post(f"{new_peer}/register", json={"peer": self.node_url})
-                    print(f"Received response from {new_peer}: {res.status_code}")
                     if res.status_code == 200:
                         received_peers = set(res.json().get("peers", []))
                         self.peers.update(received_peers - {self.node_url})
@@ -79,11 +79,13 @@ class Node:
                 except Exception as e:
                     print(f"[!] Failed to register with {new_peer}: {e}")
 
+        self.broadcast_message(f"Known peers: {known_peers}")
+
 
     # Sync chain with other nodes
     def sync_chain(self):
         longest_chain = self.blockchain.chain
-        print(f"Syncing with peers: {self.peers}")
+        self.broadcast_message("⏳ Syncing the blockchain with peers...")
         for peer in self.peers:
             # Skip self node
             if peer == self.node_url:
@@ -93,8 +95,6 @@ class Node:
                 res = requests.get(f"{peer}/chain", timeout=3)
                 remote_chain_data = res.json()
                 remote_chain = [Block.from_dict(b) for b in remote_chain_data]
-                
-                print (f"Fetched remote chain with {len(remote_chain)} blocks. Validating...")
                 
                 # Validate the remote chain
                 if not remote_chain:
@@ -119,10 +119,8 @@ class Node:
         if longest_chain != self.blockchain.chain:
             self.blockchain.chain = longest_chain
             self.blockchain.save_chain()
-            print(f"[{self.node_id}] Chain updated from peers.")
             self.broadcast_message(f"✅ Chain updated from peers.")
         else:
-            print(f"[{self.node_id}] No updates from peers. Current chain is up to date.")
             self.broadcast_message(f"✅ No updates from peers. Current chain is up to date.")
 
     # Mining in a separate thread
@@ -132,14 +130,12 @@ class Node:
             self.stop_event = Event()
             self.stop_event.clear()
 
-            self.broadcast_message("⏳ Syncing with peers before mining...")
             self.sync_chain()  # make sure this fetches the longest valid chain
 
             # Mine and save the new block
-            self.broadcast_message(f"⛏️  Mining block...")
             transactions_data = self.pending_transactions[0] if self.pending_transactions else "empty"
             data = f"'{transactions_data}' mined by {self.node_id}"
-            self.broadcast_message(f"⛏️  Mining block with data: {data}, stop_event: {self.stop_event.isSet()}")
+            self.broadcast_message(f"⛏️  Mining block with data: {data}")
             new_block = self.blockchain.mine_block(data, stop_event=self.stop_event)
 
             if new_block is None:
@@ -158,7 +154,8 @@ class Node:
                 self.pending_transactions.remove(transactions_data)
             # Broadcast the new block to peers
             self.broadcast_block(new_block)
-            self.broadcast_to_subscribers(new_block)
+            # self.broadcast_to_subscribers(new_block)
+            self.broadcast_message(f"✅ Block {new_block.index} mined, saved and broadcasted.")
             self.is_mining = False  # Stop mining after broadcasting
 
             # ✅ Check if more transactions are still in the pool
@@ -178,9 +175,7 @@ class Node:
         for peer in self.peers:
             try:
                 r = requests.post(f"{peer}/submit_transaction", json=payload, timeout=2)
-                if r.ok:
-                    print(f"Sent transaction to {peer}")
-                else:
+                if not r.ok:
                     print(f"{peer} rejected transaction: {r.text}")
             except Exception as e:
                 print(f"Error sending transaction to {peer}: {e}")
@@ -195,14 +190,10 @@ class Node:
         for peer in self.peers:
             try:
                 r = requests.post(f"{peer}/receive_block", json=payload, timeout=2)
-                if r.ok:
-                    print(f"Sent block to {peer}")
-                else:
+                if not r.ok:
                     print(f"{peer} rejected block: {r.text}")
             except Exception as e:
                 print(f"Error sending block to {peer}: {e}")
 
     def run(self):
         self.app.run(port=self.port, debug=False, threaded=True)
-        # self.register()
-        # self.sync_chain()

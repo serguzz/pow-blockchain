@@ -36,9 +36,7 @@ class NodeAPI:
             data = request.get_json()
             peer_url = data.get("peer")
             if peer_url and (peer_url != self.node.node_url):
-                print(f"{peer_url} is not self node {self.node.node_url}. Registering...")
                 self.node.peers.add(peer_url)
-                print(f"[+] New peer registered: {peer_url}")
                 self.node.broadcast_message(f"[+] Discovered new peer: {peer_url}")
             return jsonify({"peers": list(self.node.peers)})
 
@@ -52,8 +50,7 @@ class NodeAPI:
             tx = tx_data.get("transaction")
             peer = tx_data.get("peer")
             if peer and peer != self.node.node_url and peer not in self.node.peers:
-                print(f"[+] Discovered new peer (via transaction): {peer}")
-                self.node.broadcast_message(f"[+] Discovered new peer (when submitting transaction): {peer}")
+                self.node.broadcast_message(f"[+] Transaction submitted by unknown peer: {peer}. Registering the peer...")
                 self.node.peers.add(peer)
             if tx:
                 if tx not in self.node.pending_transactions:
@@ -63,7 +60,7 @@ class NodeAPI:
 
                     # ✅ If not already mining, start mining
                     if not self.node.is_mining:
-                        print(f"⛏️  Starting mining on transaction received.")
+                        print(f"⛏️  Starting mining on received transaction.")
                         self.node.start_mining()
                     return jsonify({'message': 'Transaction accepted'}), 200
                 return jsonify({'message': 'Duplicate transaction'}), 400
@@ -74,7 +71,7 @@ class NodeAPI:
         def mine():
             try:
                 new_block = self.node.start_mining()
-                return jsonify({"message": f"Block {new_block.index} mined and broadcast!"})
+                return jsonify({"message": f"Block {new_block.index} mined and broadcasted!"})
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
 
@@ -84,19 +81,21 @@ class NodeAPI:
             data = request.get_json()
             miner = data.get("miner")
             block_data = data.get("block")
+            print(f"New block {block_data} received from miner: {miner}")
             try:                
                 # Validate the miner URL
                 try:
                     parsed = urlparse(miner)
                     if parsed.scheme not in ["http", "https"] or not parsed.netloc:
                         raise ValueError("Invalid URL")
+                    print(f"Valid miner URL: {miner}")
                 except Exception as e:
-                    print(f"Invalid miner URL: {miner}")
+                    print(f"Block received from miner with invalid URL: {miner}")
                     return "Invalid miner URL", 400
 
                 # Add miner to peers if it's not self and not already added
                 if miner != self.node.node_url and miner not in self.node.peers:
-                    print(f"[+] Discovered new peer (via block): {miner}")
+                    self.node.broadcast_message(f"[+] New block submitted by unknown peer: {miner}. Registering the peer...")
                     self.node.peers.add(miner)
 
                 # Get and validate received block
@@ -110,7 +109,7 @@ class NodeAPI:
                     return jsonify({'error': 'Difficulty too low'}), 400
 
                 # stop mining if valid block received
-                if hasattr(self.node, 'stop_event'):
+                if self.node.is_mining and hasattr(self.node, 'stop_event'):
                     self.node.stop_event.set()
                     print("🛑 Valid incoming block! Any mining will be stopped.")
                 '''    
@@ -127,9 +126,9 @@ class NodeAPI:
                 if transactions in self.node.pending_transactions:
                     self.node.pending_transactions.remove(transactions)
 
-                print(f"Block {block.index} accepted from {miner}.")                
+                self.node.broadcast_message(f"✅ Block {block.index} accepted from {miner}.")
                 self.node.blockchain.save_chain()
-                self.node.broadcast_to_subscribers(block, miner)  # broadcast to frontend subscribers
+                # self.node.broadcast_to_subscribers(block, miner)  # broadcast to frontend subscribers
                 return jsonify({'message': 'Block added'}), 200
 
             except Exception as e:

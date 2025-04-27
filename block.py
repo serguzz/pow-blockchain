@@ -23,12 +23,9 @@ class Block:
             "difficulty": self.difficulty,  # <-- this is important
             "nonce": self.nonce
         }
-        # print(f"Calculating hash for block: {block_dict}")
         block_string = json.dumps(block_dict, sort_keys=True).encode()
-        result = hashlib.sha256(block_string).hexdigest()
-        # print(f"Hash calculated: {result}")
-        return result
-        # return hashlib.sha256(block_string).hexdigest()
+        return hashlib.sha256(block_string).hexdigest()
+    
     
     def mine_block(self, stop_event=None):
         """Proof of Work: Adjust nonce until hash meets difficulty criteria."""
@@ -65,6 +62,6 @@ class Block:
             hash=data['hash']
         )
         if block.hash != block.calculate_hash():
-            print(f"Invalid block {block.index} from dictionary: hash does not match calculated hash.")
+            print(f"Invalid block {block.index} from dictionary: hash {block.hash} does not match calculated hash {block.calculate_hash()}.")
             return None
         return block

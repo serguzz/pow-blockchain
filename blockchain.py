@@ -14,8 +14,6 @@ class Blockchain:
         else:
             self.chain = [self.create_genesis_block()]
             self.save_chain()
-            # print(f"Genesis block hash: {self.chain[0].hash}")
-            # print(f"Genesis block calculated hash: {self.chain[0].calculate_hash()}")
 
     def get_csv_path(self):
         return f"blockchain/blockchain_{self.node_id}.csv"
@@ -40,10 +38,7 @@ class Blockchain:
         else:
             print("🧱 No blockchain found, creating genesis block...")
             self.chain = [self.create_genesis_block()]
-            print("🧱 Genesis block created.")
             self.save_chain()
-            print(f"Genesis block hash: {self.chain[0].hash}")
-            print(f"Genesis block calculated hash: {self.chain[0].calculate_hash()}")
 
     def save_chain(self):
         """Save current blockchain to CSV."""
@@ -66,9 +61,6 @@ class Blockchain:
         """Creates the first block with a fixed previous hash."""
         block = Block(0, "0", "Genesis Block", difficulty=self.difficulty)
         block.mine_block()  # Mine the genesis block
-        print(f"{block.hash} - Block hash")
-        print(f"{block.calculate_hash()} - Calculated hash")
-        print(f"Equal? - {block.hash == block.calculate_hash()}")
         return block
 
     def get_latest_block(self):
@@ -78,9 +70,7 @@ class Blockchain:
         """Adds a new block with PoW to the blockchain."""
         latest_block = self.get_latest_block()
         if latest_block.hash != latest_block.calculate_hash():
-            print("Block cannot be added: latest block hash does not match calculated hash")
-            print(f"Latest block hash: {latest_block.hash}")
-            print(f"Calculated hash: {latest_block.calculate_hash()}")
+            print(f"Block cannot be added: latest block hash {latest_block.hash} does not match calculated hash {latest_block.calculate_hash()}")
             return None
         index = latest_block.index + 1  # or len(self.chain)
         dificulty = max(latest_block.difficulty, self.difficulty)
@@ -88,18 +78,18 @@ class Blockchain:
         new_block = Block(index, latest_block.hash, transactions, dificulty)
         new_hash = new_block.mine_block(stop_event=stop_event)
         if new_hash is None:
-            print("Mining was interrupted on blockchain level.")
+            print("⛔ Mining was interrupted on blockchain level.")
             return None
+        '''
         while new_block.hash != new_block.calculate_hash():
             print(f"After mining block {new_block.index} has incorrect hash. Repeating mining...")
             new_hash = new_block.mine_block(stop_event=stop_event)
             if new_hash is None:
                 print("⛔ Mining interrupted on blockchain level.")
                 return None
-            
+        '''    
         self.chain.append(new_block)
         self.save_chain()  # <-- Save on every new block
-        # print(f"Block {new_block.index} mined with hash: {new_block.hash} and calculated hash: {new_block.calculate_hash()}")
         return new_block
     
     def validate_block(self, block, previous_block):
@@ -127,24 +117,10 @@ class Blockchain:
         if not chain:
             print("Chain is empty")
             return False
-        block = chain[0]
+        
         if chain[0].hash != chain[0].calculate_hash():
-            print(f"Genesis block: {chain[0]}")
             for key, value in chain[0].to_dict().items():
                 print(f"{key}: {value}")
-            print(f"{chain[0].hash} - block hash")
-            print(f"{chain[0].calculate_hash()} - calculated hash")
-
-            print("Genesis block fields:")
-            print(f"index: {block.index}")
-            print(f"timestamp: {block.timestamp}")
-            print(f"transactions: {block.transactions}")
-            print(f"previous_hash: {block.previous_hash}")
-            print(f"nonce: {block.nonce}")
-            print(f"difficulty: {block.difficulty}")
-            print(f"original hash: {block.hash}")
-            print(f"recomputed hash: {block.calculate_hash()}")
-
             print("Genesis block hash is invalid")
             return False
         
@@ -161,14 +137,3 @@ class Blockchain:
             self.chain = new_chain
             return True
         return False
-
-
-    def print_blockchain(self):
-        # Print the blockchain
-        for block in self.chain:
-            print(f"Block {block.index}:")
-            print(f"  Previous Hash: {block.previous_hash}")
-            print(f"  Transactions: {block.transactions}")
-            print(f"  Timestamp: {block.timestamp}")
-            print(f"  Nonce: {block.nonce}")
-            print(f"  Hash: {block.hash}\n")

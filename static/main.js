@@ -70,8 +70,9 @@ function startSSE() {
     source.onmessage = (e) => {
         msg = e.data;
         log("📥 " + msg);
-        if (msg.includes("accepted from node") || msg.includes("mined, saved and broadcasted")) {
+        if (msg.includes("accepted from") || msg.includes("mined, saved and broadcasted")) {
             fetchChain();  // 🟢 re-fetch the chain from backend
+            fetchTransactions();  // 🟢 re-fetch the transactions from backend
         }
     }
     fetchChain();  // 🟢 fetch the chain on load
@@ -111,8 +112,8 @@ function startSSE() {
     fetchTransactions();
   });
   
-  setInterval(fetchTransactions, 3000);
-  fetchTransactions();
+  // setInterval(fetchTransactions, 3000);
+  // fetchTransactions();
 
 }
 
