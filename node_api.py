@@ -70,9 +70,11 @@ class NodeAPI:
         @self.app.route('/mine', methods=['POST'])
         def mine():
             try:
-                new_block = self.node.start_mining()
-                return jsonify({"message": f"Block {new_block.index} mined and broadcasted!"})
+                # Starts asynchronous mining
+                self.node.start_mining()
+                return jsonify({"message": f"Mining started !!!"})
             except Exception as e:
+                print(f"Error starting mining: {e}")
                 return jsonify({"error": str(e)}), 500
 
         # Route to receive block from other nodes
@@ -94,7 +96,7 @@ class NodeAPI:
                     return "Invalid miner URL", 400
 
                 # Add miner to peers if it's not self and not already added
-                if miner != self.node.node_url and miner not in self.node.peers:
+                if (miner != self.node.node_url) and (miner not in self.node.peers):
                     self.node.broadcast_message(f"[+] New block submitted by unknown peer: {miner}. Registering the peer...")
                     self.node.peers.add(miner)
 
@@ -109,14 +111,9 @@ class NodeAPI:
                     return jsonify({'error': 'Difficulty too low'}), 400
 
                 # stop mining if valid block received
-                if self.node.is_mining and hasattr(self.node, 'stop_event'):
+                if hasattr(self.node, 'stop_event'):
                     self.node.stop_event.set()
                     print("🛑 Valid incoming block! Any mining will be stopped.")
-                '''    
-                self.node.is_mining = False
-                if self.node.mining_thread and self.node.mining_thread.is_alive():
-                    self.node.mining_thread.join(timeout=1)
-                '''
 
                 # Now safely add the received block to the chain
                 self.node.blockchain.chain.append(block)

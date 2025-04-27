@@ -13,6 +13,7 @@ class Block:
         self.nonce = nonce
         self.hash = hash or self.calculate_hash()
 
+
     def calculate_hash(self):
         """Returns SHA-256 hash of block data."""
         block_dict = {
@@ -20,7 +21,7 @@ class Block:
             "previous_hash": self.previous_hash,
             "timestamp": self.timestamp,
             "transactions": self.transactions,
-            "difficulty": self.difficulty,  # <-- this is important
+            "difficulty": self.difficulty,
             "nonce": self.nonce
         }
         block_string = json.dumps(block_dict, sort_keys=True).encode()
@@ -38,6 +39,7 @@ class Block:
             self.hash = self.calculate_hash()
         return self.hash
     
+
     def to_dict(self):
         return {
             'index': self.index,
@@ -49,12 +51,24 @@ class Block:
             'hash': self.hash
         }
     
+
+    def __str__(self):
+        return f"Block: \n" \
+                f"  Index: {self.index} type: {type(self.index)}\n" \
+                f"  Previous Hash: {self.previous_hash} type: {type(self.previous_hash)}\n" \
+                f"  Timestamp: {self.timestamp} type: {type(self.timestamp)}\n" \
+                f"  Transactions: {self.transactions} type: {type(self.transactions)}\n" \
+                f"  Difficulty: {self.difficulty} type: {type(self.difficulty)}\n" \
+                f"  Nonce: {self.nonce} type: {type(self.nonce)}\n" \
+                f"  Hash: {self.hash} type: {type(self.hash)}\n" \
+                f"  Hash calculated: {self.calculate_hash()} type: {type(self.calculate_hash())}\n" \
+    
+
     @staticmethod
     def from_dict(data):
         block = Block(
             index=data['index'],
             previous_hash=data['previous_hash'],
-            # timestamp=round(data['timestamp'], 6),
             timestamp=data['timestamp'], # Assume timestamp is already rounded
             transactions=data['transactions'],
             difficulty=data['difficulty'],

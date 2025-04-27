@@ -7,15 +7,14 @@ from blockchain import Blockchain, Block
 
 class Node:
     def __init__(self, app, node_id, port, peers=None):
+        self.app = app
         self.node_id = node_id
         self.port = port
         self.node_url = f"http://localhost:{port}"
-        self.subscribers = []
-        self.stop_event = None  # Event to stop mining thread if needed
         self.peers = set(peers or [])  # Start with known peers
-        # self.app = Flask(__name__, template_folder='templates')
-        self.app = app
 
+        self.subscribers = []
+        self.stop_event = Event()  # Event to stop mining thread if needed
         self.pending_transactions = []  # List to hold pending transactions
         self.is_mining = False
         self.mining_thread = None
@@ -27,18 +26,6 @@ class Node:
         self.register_with_peers()
         self.sync_chain()
 
-
-    # Notify subscribers about new block
-    '''
-    def broadcast_to_subscribers(self, block, source=None):
-        if not source:
-            message = f"✅ Block {block.index} mined, saved and broadcasted."
-            for q in self.subscribers:
-                try:
-                    q.put(message)
-                except:
-                    continue
-    '''
 
     # Broadcast message to subscribers            
     def broadcast_message(self, message):
@@ -84,6 +71,7 @@ class Node:
 
     # Sync chain with other nodes
     def sync_chain(self):
+        self.register_with_peers()  # Register with peers before syncing
         longest_chain = self.blockchain.chain
         self.broadcast_message("⏳ Syncing the blockchain with peers...")
         for peer in self.peers:
@@ -123,11 +111,12 @@ class Node:
         else:
             self.broadcast_message(f"✅ No updates from peers. Current chain is up to date.")
 
+
     # Mining in a separate thread
     def start_mining(self):
         def mine_block():
             self.is_mining = True
-            self.stop_event = Event()
+            # self.stop_event = Event()
             self.stop_event.clear()
 
             self.sync_chain()  # make sure this fetches the longest valid chain
@@ -163,7 +152,8 @@ class Node:
                 self.broadcast_message("🔁 Continuing mining pending transactions...")
                 self.start_mining()  # Recursive call to mine next block
 
-            # return new_block
+            return new_block
+        
         self.mining_thread = Thread(target=mine_block)
         self.mining_thread.start()
 

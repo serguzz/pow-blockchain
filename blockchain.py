@@ -10,7 +10,7 @@ class Blockchain:
         self.difficulty = difficulty  # Initialize difficulty
         self.chain = []
         if os.path.exists(self.get_csv_path()):
-            self.load_chain()
+            self.load_chain(self.get_csv_path())
         else:
             self.chain = [self.create_genesis_block()]
             self.save_chain()
@@ -18,27 +18,30 @@ class Blockchain:
     def get_csv_path(self):
         return f"blockchain/blockchain_{self.node_id}.csv"
 
-    def load_chain(self):
+    def load_chain(self, path):
         """Load blockchain from CSV, or create genesis block if file is missing."""
-        path = self.get_csv_path()
-        if os.path.exists(path):
-            df = pd.read_csv(path)
-            for _, row in df.iterrows():
-                block = Block(
-                    index=int(row['index']),
-                    previous_hash=row['previous_hash'],
-                    transactions=row['transactions'],
-                    difficulty=int(row['difficulty']),
-                    timestamp=row['timestamp'],
-                    nonce=int(row['nonce'])
-                    # hash=row['hash']
-                )
-                block.hash = row['hash']
-                self.chain.append(block)
+        chain = []
+        df = pd.read_csv(path)
+        print(f"Iterating over {len(df)} blocks in loaded chain.")
+        for _, row in df.iterrows():
+            block = Block(
+                index=int(row['index']),
+                previous_hash=row['previous_hash'],
+                transactions=row['transactions'],
+                difficulty=int(row['difficulty']),
+                timestamp=float(row['timestamp']),
+                nonce=int(row['nonce']),
+                hash=row['hash']
+            )
+            chain.append(block)
+
+        if self.validate_chain(chain):
+            self.chain = chain
         else:
-            print("🧱 No blockchain found, creating genesis block...")
+            print(f"Chain invalid!!!")
             self.chain = [self.create_genesis_block()]
             self.save_chain()
+
 
     def save_chain(self):
         """Save current blockchain to CSV."""
@@ -53,18 +56,19 @@ class Blockchain:
         } for block in self.chain]
 
         df = pd.DataFrame(data)
-        # os.makedirs(os.path.dirname(self.get_csv_path()), exist_ok=True)
         df.to_csv(self.get_csv_path(), index=False)
 
 
     def create_genesis_block(self):
         """Creates the first block with a fixed previous hash."""
-        block = Block(0, "0", "Genesis Block", difficulty=self.difficulty)
+        block = Block(0, "empty_hash", "Genesis Block", difficulty=self.difficulty)
         block.mine_block()  # Mine the genesis block
         return block
 
+
     def get_latest_block(self):
         return self.chain[-1]
+
 
     def mine_block(self, transactions, stop_event=None):
         """Adds a new block with PoW to the blockchain."""
@@ -80,18 +84,12 @@ class Blockchain:
         if new_hash is None:
             print("⛔ Mining was interrupted on blockchain level.")
             return None
-        '''
-        while new_block.hash != new_block.calculate_hash():
-            print(f"After mining block {new_block.index} has incorrect hash. Repeating mining...")
-            new_hash = new_block.mine_block(stop_event=stop_event)
-            if new_hash is None:
-                print("⛔ Mining interrupted on blockchain level.")
-                return None
-        '''    
+
         self.chain.append(new_block)
         self.save_chain()  # <-- Save on every new block
         return new_block
-    
+
+
     def validate_block(self, block, previous_block):
         """Validates the block against the previous block."""
         if block.index != previous_block.index + 1:
@@ -119,9 +117,7 @@ class Blockchain:
             return False
         
         if chain[0].hash != chain[0].calculate_hash():
-            for key, value in chain[0].to_dict().items():
-                print(f"{key}: {value}")
-            print("Genesis block hash is invalid")
+            print(f"Genesis block {chain[0]} hash is invalid")
             return False
         
         for i in range(1, len(chain)):
@@ -131,9 +127,3 @@ class Blockchain:
                 return False
         return True
 
-    # Replace the current chain with a new one if it's valid and longer
-    def replace_chain(self, new_chain):
-        if self.validate_chain(new_chain) and len(new_chain) > len(self.chain):
-            self.chain = new_chain
-            return True
-        return False
