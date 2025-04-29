@@ -122,10 +122,9 @@ class Node:
             self.sync_chain()  # make sure this fetches the longest valid chain
 
             # Mine and save the new block
-            transactions_data = self.pending_transactions[0] if self.pending_transactions else "empty"
-            data = f"'{transactions_data}' mined by {self.node_id}"
-            self.broadcast_message(f"⛏️  Mining block with data: {data}")
-            new_block = self.blockchain.mine_block(data, stop_event=self.stop_event)
+            transactions = self.pending_transactions[0] if self.pending_transactions else "empty"
+            self.broadcast_message(f"⛏️  Mining block with data: {transactions}")
+            new_block = self.blockchain.mine_block(transactions, stop_event=self.stop_event)
 
             if new_block is None:
                 print("⛔ Mining interrupted on Node level!")
@@ -139,8 +138,8 @@ class Node:
                 return None
             
             # Remove the mined transaction from the pool
-            if transactions_data in self.pending_transactions:
-                self.pending_transactions.remove(transactions_data)
+            if transactions in self.pending_transactions:
+                self.pending_transactions.remove(transactions)
             # Broadcast the new block to peers
             self.broadcast_block(new_block)
             # self.broadcast_to_subscribers(new_block)

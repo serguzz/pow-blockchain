@@ -4,15 +4,16 @@ import json
 
 # Block class with PoW
 class Block:
-    def __init__(self, index, previous_hash, transactions, difficulty=1, timestamp=None, nonce=0, hash=None):
+    def __init__(self, index, previous_hash, transactions, miner, difficulty=1, timestamp=None, nonce=0, hash=None):
         self.index = index
         self.previous_hash = previous_hash
         self.timestamp = round(timestamp or time.time(), 6)
         self.transactions = transactions
+        self.miner = miner
         self.difficulty = difficulty  # Number of leading zeros required in hash
         self.nonce = nonce
         self.hash = hash or self.calculate_hash()
-
+        
 
     def calculate_hash(self):
         """Returns SHA-256 hash of block data."""
@@ -21,6 +22,7 @@ class Block:
             "previous_hash": self.previous_hash,
             "timestamp": self.timestamp,
             "transactions": self.transactions,
+            "miner": self.miner,
             "difficulty": self.difficulty,
             "nonce": self.nonce
         }
@@ -46,6 +48,7 @@ class Block:
             'previous_hash': self.previous_hash,
             'timestamp': self.timestamp,
             'transactions': self.transactions,
+            'miner': self.miner,
             'difficulty': self.difficulty,
             'nonce': self.nonce,
             'hash': self.hash
@@ -64,6 +67,21 @@ class Block:
                 f"  Hash calculated: {self.calculate_hash()} type: {type(self.calculate_hash())}\n" \
     
 
+    def __eq__(self, other):
+        if not isinstance(other, Block):
+            return False
+        return (
+            self.index == other.index and
+            self.previous_hash == other.previous_hash and
+            self.timestamp == other.timestamp and
+            self.transactions == other.transactions and
+            self.miner == other.miner and
+            self.difficulty == other.difficulty and
+            self.nonce == other.nonce and
+            self.hash == other.hash
+        )
+
+
     @staticmethod
     def from_dict(data):
         block = Block(
@@ -71,6 +89,7 @@ class Block:
             previous_hash=data['previous_hash'],
             timestamp=data['timestamp'], # Assume timestamp is already rounded
             transactions=data['transactions'],
+            miner=data['miner'],
             difficulty=data['difficulty'],
             nonce=data['nonce'],
             hash=data['hash']

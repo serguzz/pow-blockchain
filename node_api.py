@@ -35,7 +35,7 @@ class NodeAPI:
         def register():
             data = request.get_json()
             peer_url = data.get("peer")
-            if peer_url and (peer_url != self.node.node_url):
+            if peer_url and (peer_url != self.node.node_url) and peer_url not in self.node.peers:
                 self.node.peers.add(peer_url)
                 self.node.broadcast_message(f"[+] Discovered new peer: {peer_url}")
             return jsonify({"peers": list(self.node.peers)})
@@ -104,11 +104,21 @@ class NodeAPI:
                 block = Block.from_dict(block_data)
                 latest = self.node.blockchain.get_latest_block()
 
-                if block.previous_hash != latest.hash:
-                    return jsonify({'error': 'Invalid previous hash'}), 400
-
-                if block.difficulty < latest.difficulty:
-                    return jsonify({'error': 'Difficulty too low'}), 400
+                if not self.node.blockchain.validate_block(block, latest):
+                    print(f"Received block #{block.index} from {miner} does not align with the current chain.")
+                    self.node.broadcast_message(f"Could not accept received block #{block.index} from {miner}. Syncing chain instead...")
+                    self.node.sync_chain()  # Sync the chain to get the latest chain version
+                    latest = self.node.blockchain.get_latest_block()
+                    if latest != block:
+                        print(f"Received block {block} from {miner} is invalid.")
+                        return jsonify({'error': 'Invalid block'}), 400
+                    else:
+                        print(f"Received block {block} from {miner} is valid after syncing.")
+                        # TODO: Maybe need to stop mining if block triggered syncing and
+                        # the syncing was successful
+                        # self.node.stop_event.set()  # Stop mining if valid block triggered needed syncing
+                        # also, check if transactions need to be removed from pending transactions
+                        return jsonify({'message': 'Block accepted after syncing'}), 200
 
                 # stop mining if valid block received
                 if hasattr(self.node, 'stop_event'):
@@ -117,9 +127,8 @@ class NodeAPI:
 
                 # Now safely add the received block to the chain
                 self.node.blockchain.chain.append(block)
-                # Parse block.transactions from string 'transactions' mined by ...
-                transactions_string = block.transactions
-                transactions = transactions_string.split("'")[1]  # Extract the transaction string
+                # Remove the transactions from pending transactions
+                transactions = block.transactions
                 if transactions in self.node.pending_transactions:
                     self.node.pending_transactions.remove(transactions)
 

@@ -28,6 +28,7 @@ class Blockchain:
                 index=int(row['index']),
                 previous_hash=row['previous_hash'],
                 transactions=row['transactions'],
+                miner=row['miner'],
                 difficulty=int(row['difficulty']),
                 timestamp=float(row['timestamp']),
                 nonce=int(row['nonce']),
@@ -50,6 +51,7 @@ class Blockchain:
             "previous_hash": block.previous_hash,
             "timestamp": block.timestamp,
             "transactions": block.transactions,
+            "miner": block.miner,
             "difficulty": block.difficulty,
             "nonce": block.nonce,
             "hash": block.hash
@@ -61,7 +63,7 @@ class Blockchain:
 
     def create_genesis_block(self):
         """Creates the first block with a fixed previous hash."""
-        block = Block(0, "empty_hash", "Genesis Block", difficulty=self.difficulty)
+        block = Block(0, "empty_hash", "Genesis Block", miner=self.node_id, difficulty=self.difficulty)
         block.mine_block()  # Mine the genesis block
         return block
 
@@ -79,7 +81,7 @@ class Blockchain:
         index = latest_block.index + 1  # or len(self.chain)
         dificulty = max(latest_block.difficulty, self.difficulty)
         
-        new_block = Block(index, latest_block.hash, transactions, dificulty)
+        new_block = Block(index, latest_block.hash, transactions, self.node_id, dificulty)
         new_hash = new_block.mine_block(stop_event=stop_event)
         if new_hash is None:
             print("⛔ Mining was interrupted on blockchain level.")
@@ -100,6 +102,9 @@ class Blockchain:
             return False
         if block.hash != block.calculate_hash():
             print(f"Block hash {block.hash} does not match calculated hash {block.calculate_hash()}")
+            return False
+        if block.difficulty < previous_block.difficulty:
+            print(f"Block difficulty {block.difficulty} is less than previous block difficulty {previous_block.difficulty}")
             return False
         if block.timestamp <= previous_block.timestamp:
             print("Block time is not in order")
