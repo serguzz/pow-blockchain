@@ -26,3 +26,11 @@ class Transaction:
             return public_key.verify(bytes.fromhex(self.signature), message.encode())
         except:
             return False
+        
+    def __str__(self):
+        return f"Transaction:\
+            \nsender_public_key: {self.sender_public_key},\
+            \nreceiver_address: {self.receiver_address}, \
+            \namount: {self.amount}, \
+            \nsignature: {self.signature}, \
+            \ntx_id: {self.tx_id}\n"

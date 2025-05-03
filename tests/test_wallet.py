@@ -1,4 +1,3 @@
-import pytest
 from src.wallet import Wallet
 
 # Create a new wallet

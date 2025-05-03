@@ -1,4 +1,3 @@
-import pytest
 from src.wallet import Wallet
 from src.transaction import Transaction
 

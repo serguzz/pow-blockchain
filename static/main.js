@@ -43,6 +43,7 @@ function renderChain(chainData) {
             <p><strong>Hash:</strong> ${block.hash}</p>
             <p><strong>Nonce:</strong> ${block.nonce}</p>
             <p><strong>Difficulty:</strong> ${block.difficulty}</p>
+            <p><strong>Miner:</strong> ${block.miner}</p>
             <p><strong>Data:</strong></p>
             <pre>${block.transactions}</pre>
         </div>`;

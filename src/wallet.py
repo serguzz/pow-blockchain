@@ -3,6 +3,12 @@ from ecdsa import SigningKey, SECP256k1
 import hashlib
 
 class Wallet:
+    """
+    Wallet consists of a private and public keys
+    The private key is used to sign transactions, while the public key is used to verify  them
+    The address is derived from the public key - The address is a hash of the public key
+    """
+    
     def __init__(self, private_key=None):
         if private_key:
             self.private_key = SigningKey.from_string(bytes.fromhex(private_key), curve=SECP256k1)
@@ -30,3 +36,8 @@ class Wallet:
 
     def sign(self, message):
         return self.private_key.sign(message.encode()).hex()
+    
+    def __str__(self):
+        return f"\nWallet Address: {self.address},\
+            \nPrivate Key: {self.private_key.to_string().hex()}\
+            \nPublic Key: {self.public_key.to_string().hex()}\n"
