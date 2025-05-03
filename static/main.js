@@ -95,14 +95,15 @@ function startSSE() {
       }
   });
 
-  document.getElementById('transactionForm').addEventListener('submit', async (e) => {
+  // Old simple transaction form (transaction - simple string)
+  document.getElementById('transactionForm_old').addEventListener('submit', async (e) => {
     e.preventDefault();
     const input = document.getElementById('transactionInput');
     const value = input.value.trim();
   
     if (!value) return;
   
-    const res = await fetch('/submit_transaction', {
+    const res = await fetch('/submit_transaction_old', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ transaction: value })
@@ -114,6 +115,28 @@ function startSSE() {
     input.value = '';
     fetchTransactions();
   });
+
+  // New transaction form. Transaction - JSON object with 'sender', 'receiver', and 'amount' info
+  document.getElementById('transactionForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    const sender = document.getElementById('sender_wallet').value;
+    const recipient = document.getElementById('recipient_wallet').value;
+    const amount = document.getElementById('amount').value;
+  
+    await fetch('/submit_transaction', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sender, recipient, amount })
+    });
+
+    // Clear the form fields
+    // document.getElementById('sender_wallet').value = '';
+    // document.getElementById('recipient_wallet').value = '';
+    // document.getElementById('amount').value = '';
+    // Fetch the transactions again to update the UI
+    fetchTransactions();
+  });
+  
   
   // setInterval(fetchTransactions, 3000);
   // fetchTransactions();

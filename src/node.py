@@ -121,9 +121,11 @@ class Node:
             self.sync_chain()  # make sure this fetches the longest valid chain
 
             # Mine and save the new block
-            transactions = self.pending_transactions[0] if self.pending_transactions else "empty"
-            self.broadcast_message(f"⛏️  Mining block with data: {transactions}")
-            new_block = self.blockchain.mine_block(transactions, stop_event=self.stop_event)
+            transaction = self.pending_transactions[0] if self.pending_transactions else "empty"
+            transaction_data = transaction.to_dict() if self.pending_transactions else "empty"
+
+            self.broadcast_message(f"⛏️  Mining block with data: {transaction_data}")
+            new_block = self.blockchain.mine_block(transaction_data, stop_event=self.stop_event)
 
             if new_block is None:
                 print("⛔ Mining interrupted on Node level!")
@@ -137,8 +139,8 @@ class Node:
                 return None
             
             # Remove the mined transaction from the pool
-            if transactions in self.pending_transactions:
-                self.pending_transactions.remove(transactions)
+            if transaction in self.pending_transactions:
+                self.pending_transactions.remove(transaction)
             # Broadcast the new block to peers
             self.broadcast_block(new_block)
             # self.broadcast_to_subscribers(new_block)
@@ -155,6 +157,7 @@ class Node:
         self.mining_thread = Thread(target=mine_block)
         self.mining_thread.start()
 
+
     def broadcast_transaction(self, transaction):
         payload = {
             "transaction": transaction,
@@ -162,7 +165,7 @@ class Node:
         }
         for peer in self.peers:
             try:
-                r = requests.post(f"{peer}/submit_transaction", json=payload, timeout=2)
+                r = requests.post(f"{peer}/submit_transaction_old", json=payload, timeout=2)
                 if not r.ok:
                     print(f"{peer} rejected transaction: {r.text}")
             except Exception as e:

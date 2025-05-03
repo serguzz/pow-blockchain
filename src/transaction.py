@@ -20,10 +20,11 @@ class Transaction:
     def is_valid(self):
         if not self.signature:
             return False
-        public_key = VerifyingKey.from_string(bytes.fromhex(self.sender_public_key), curve=SECP256k1)
+        # public_key = VerifyingKey.from_string(bytes.fromhex(self.sender_public_key), curve=SECP256k1)
+        # public_key.verify(bytes.fromhex(self.signature), message.encode())
         message = f"{self.sender_public_key}{self.receiver_address}{self.amount}"
         try:
-            return public_key.verify(bytes.fromhex(self.signature), message.encode())
+            return self.sender_public_key.verify(bytes.fromhex(self.signature), message.encode())
         except:
             return False
         
@@ -34,3 +35,14 @@ class Transaction:
             \namount: {self.amount}, \
             \nsignature: {self.signature}, \
             \ntx_id: {self.tx_id}\n"
+    
+
+    def to_dict(self):
+        """Return dictionary representation for saving, JSON, etc."""
+        return {
+            'sender': self.sender_public_key.to_string().hex(),
+            'recipient': self.receiver_address,
+            'amount': self.amount,
+            'signature': self.signature,
+            'tx_id': self.tx_id
+        }

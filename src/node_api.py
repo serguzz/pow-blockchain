@@ -1,7 +1,10 @@
 from flask import request, jsonify, render_template, Response
 import queue
 from urllib.parse import urlparse
+import json
 from .block import Block
+from .transaction import Transaction
+from .wallet import Wallet
 
 class NodeAPI:
     def __init__(self, app, node):
@@ -42,13 +45,14 @@ class NodeAPI:
 
         @self.app.route('/transactions', methods=['GET'])
         def get_transactions():
-            return jsonify(self.node.pending_transactions)
+            # return json.dump([tx.to_dict() for tx in self.node.pending_transactions], fp=)
+            return jsonify([tx.to_dict() for tx in self.node.pending_transactions])
 
-        @self.app.route('/submit_transaction', methods=['POST'])
-        def submit_transaction():
-            tx_data = request.get_json()
-            tx = tx_data.get("transaction")
-            peer = tx_data.get("peer")
+        @self.app.route('/submit_transaction_old', methods=['POST'])
+        def submit_transaction_old():
+            data = request.get_json()
+            tx = data.get("transaction")
+            peer = data.get("peer")
             if peer and peer != self.node.node_url and peer not in self.node.peers:
                 self.node.broadcast_message(f"[+] Transaction submitted by unknown peer: {peer}. Registering the peer...")
                 self.node.peers.add(peer)
@@ -67,6 +71,53 @@ class NodeAPI:
                 return jsonify({'message': 'Duplicate transaction'}), 400
             print(f"⛏️  Invalid transaction: {tx}")
             return jsonify({'error': 'Invalid transaction'}), 400
+
+
+        @self.app.route('/submit_transaction', methods=['POST'])
+        def submit_transaction():
+            data = request.get_json()
+
+            peer = data.get("peer")
+            if peer and peer != self.node.node_url and peer not in self.node.peers:
+                self.node.broadcast_message(f"[+] Transaction submitted by unknown peer: {peer}. Registering the peer...")
+                self.node.peers.add(peer)
+
+            sender = data.get("sender")
+            recipient = data.get("recipient")
+            amount = data.get("amount")
+
+            # wallet = Wallet.load_wallet(sender)
+            wallet = Wallet(sender)
+            if not wallet:
+                return jsonify({'error': 'Invalid sender wallet'}), 400
+            
+            # Create and sign the transaction
+            tx = Transaction(
+                sender_public_key=wallet.public_key,
+                receiver_address=recipient,
+                amount=amount
+            )
+            tx.sign_transaction(wallet.private_key)
+
+            # Validate and add to pending transactions
+            if not tx.is_valid():
+                print(f"⛏️  Invalid transaction: {tx} - Rejecting.")
+                return jsonify({'error': 'Invalid transaction'}), 400
+            
+            if tx in self.node.pending_transactions:
+                print(f"⛏️  Duplicate transaction: {tx} - Rejecting.")
+                return jsonify({'message': 'Duplicate transaction'}), 400
+
+            self.node.broadcast_message(f"⛏️  New transaction submitted: {tx}")
+            self.node.pending_transactions.append(tx)
+            self.node.broadcast_transaction(tx)
+
+            # ✅ If not already mining, start mining
+            if not self.node.is_mining:
+                print(f"⛏️  Starting mining on received transaction.")
+                self.node.start_mining()
+            return jsonify({'message': 'Transaction accepted'}), 200
+
 
         # Route to mine a block
         @self.app.route('/mine', methods=['POST'])
