@@ -1,6 +1,7 @@
 .ipynb_checkpoints/
 __pycache__/
 blockchain/
+wallets/
 
 sandbox.ipynb
 debug.py
