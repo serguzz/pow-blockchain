@@ -1,6 +1,6 @@
 from flask import Flask, jsonify
-from node import Node
-from node_api import NodeAPI
+from src.node import Node
+from src.node_api import NodeAPI
 
 class GenesisNode(Node):
     def __init__(self, app, node_id, port, peers=None):

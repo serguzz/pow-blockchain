@@ -1,7 +1,7 @@
 from flask import request, jsonify, render_template, Response
 import queue
 from urllib.parse import urlparse
-from block import Block
+from .block import Block
 
 class NodeAPI:
     def __init__(self, app, node):
@@ -63,7 +63,9 @@ class NodeAPI:
                         print(f"⛏️  Starting mining on received transaction.")
                         self.node.start_mining()
                     return jsonify({'message': 'Transaction accepted'}), 200
+                print(f"⛏️  Duplicate transaction: {tx}")
                 return jsonify({'message': 'Duplicate transaction'}), 400
+            print(f"⛏️  Invalid transaction: {tx}")
             return jsonify({'error': 'Invalid transaction'}), 400
 
         # Route to mine a block

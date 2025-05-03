@@ -1,6 +1,6 @@
-from node import Node
+from src.node import Node
 from flask import Flask
-from node_api import NodeAPI
+from src.node_api import NodeAPI
 
 if __name__ == "__main__":
     app = Flask(__name__)
