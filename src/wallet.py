@@ -1,4 +1,3 @@
-# import os
 import json
 from ecdsa import SigningKey, SECP256k1
 import hashlib

@@ -1,7 +1,5 @@
 import requests
-# import queue
 from threading import Thread, Event
-# from flask import Flask, render_template, jsonify, request, Response
 from urllib.parse import urlparse
 from .blockchain import Blockchain
 from .block import Block
