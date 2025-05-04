@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 blockchain/
 wallets/
+transactions/
 
 sandbox.ipynb
 sandbox.py
