@@ -123,6 +123,7 @@ class Node:
             # Mine and save the new block
             transaction = self.pending_transactions[0] if self.pending_transactions else "empty"
             transaction_data = transaction.to_dict() if self.pending_transactions else "empty"
+            transaction_data = transaction.to_json() if self.pending_transactions else "empty"
 
             self.broadcast_message(f"⛏️  Mining block with data: {transaction_data}")
             new_block = self.blockchain.mine_block(transaction_data, stop_event=self.stop_event)

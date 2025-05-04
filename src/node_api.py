@@ -109,9 +109,19 @@ class NodeAPI:
 
         @self.app.route('/submit_transaction_file', methods=['POST'])
         def submit_transaction_file():
-            filename = request.args.get('filename')
-            path = os.path.join('transactions', filename)
 
+            if 'transaction_file' not in request.files:
+                return jsonify({"error": "No transaction file provided."}), 400
+            transaction_file = request.files['transaction_file']
+            if transaction_file.filename == '':
+                return jsonify({"error": "No selected file."}), 400
+            
+            # filename = transaction_file.filename
+
+            # filename = request.args.get('filename')
+            # path = os.path.join('transactions', filename)
+
+            '''
             if not os.path.exists(path):
                 return jsonify({"error": "Transaction file not found."}), 404
 
@@ -119,16 +129,25 @@ class NodeAPI:
                 tx_data = json.load(f)
 
             transaction = Transaction.from_dict(tx_data)
+            '''
+            transaction = Transaction.from_file_object(transaction_file)
+            filename = transaction_file.filename
 
             if not transaction.is_valid():
                 print(f"Invalid transaction in file {filename}.")
                 return jsonify({"error": f"Invalid transaction in file {filename}."}), 400
 
+            self.node.broadcast_message(f"⛏️  New transaction submitted from file: {filename}")
             self.node.pending_transactions.append(transaction)
             self.node.broadcast_transaction(transaction)
 
-            self.node.broadcast_message(f"⛏️  New transaction submitted from file: {filename}")
-            return jsonify({"message": "Transaction submitted, validated and broadcasted successfully!"})
+            # ✅ If not already mining, start mining
+            if not self.node.is_mining:
+                print(f"⛏️  Starting mining on received transaction.")
+                self.node.start_mining()
+            # return jsonify({'message': 'Transaction accepted'}), 200
+
+            return jsonify({"message": "Transaction submitted, validated and broadcasted successfully!"}), 200
 
 
         # Route to mine a block

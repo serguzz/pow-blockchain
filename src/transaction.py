@@ -28,15 +28,26 @@ class Transaction:
             return self.from_public_key.verify(bytes.fromhex(self.signature), message.encode())
         except:
             return False
+
+
+    def __eq__(self, other):
+        if not isinstance(other, Transaction):
+            return False
+        return (self.from_address == other.from_address and
+                self.from_public_key == other.from_public_key and
+                self.to_address == other.to_address and
+                self.amount == other.amount and
+                self.signature == other.signature and
+                self.tx_id == other.tx_id)
+    
         
     def __str__(self):
-        return f"Transaction:\
-            \nfrom_address: {self.from_address},\
-            \nfrom_public_key: {self.from_public_key},\
-            \nto_address: {self.to_address}, \
-            \namount: {self.amount}, \
-            \nsignature: {self.signature}, \
-            \ntx_id: {self.tx_id}\n"
+        return f"from_address: {self.from_address}, \
+            from_public_key: {self.from_public_key}, \
+            to_address: {self.to_address}, \
+            amount: {self.amount}, \
+            signature: {self.signature}, \
+            tx_id: {self.tx_id}"
     
 
     def to_dict(self):
@@ -62,6 +73,12 @@ class Transaction:
             tx_id=data['tx_id']
         )
     
+    
+    def to_json(self):
+        """Return JSON representation of the transaction."""
+        return json.dumps(self.to_dict(), indent=4)
+    
+    
     def to_file(self, path):
         """Save transaction to a file."""
         with open(path, 'w') as f:
@@ -75,3 +92,9 @@ class Transaction:
             data = json.load(f)
             return cls.from_dict(data)
         # return cls.from_dict(json.load(f))  # Uncomment this line to use JSON loading instead of eval
+
+    @classmethod
+    def from_file_object(cls, file_obj):
+        """Load transaction from a file object."""
+        data = json.load(file_obj)
+        return cls.from_dict(data)

@@ -137,7 +137,27 @@ function startSSE() {
     fetchTransactions();
   });
   
+  // Transaction file form. Transaction - JSON object with 'sender', 'receiver', and 'amount' info
+  document.getElementById('transactionFileForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    const fileInput = document.getElementById('transaction_file');
+    const file = fileInput.files[0];
   
+    const formData = new FormData();
+    formData.append('transaction_file', file);
+  
+    await fetch('/submit_transaction_file', {
+      method: 'POST',
+      body: formData
+    });
+
+    // Clear the form fields
+    // document.getElementById('transaction_file').value = ''; // Clear the file input
+    // Fetch the transactions again to update the UI
+    fetchTransactions();
+  });
+  
+
   // setInterval(fetchTransactions, 3000);
   // fetchTransactions();
 
@@ -158,7 +178,7 @@ async function fetchTransactions() {
     data.forEach(tx => {
       // alert("Transaction: " + tx);
       const li = document.createElement('li');
-      li.textContent = tx;
+      li.textContent = JSON.stringify(tx, null, 2);
       pendingList.appendChild(li);
     });
 

@@ -45,6 +45,13 @@
     <button type="submit">Submit Transaction</button>
   </form>
 
+  <!-- Improved Transaction Form -->
+  <form id="transactionFileForm">
+    <input type="file" id="transaction_file" placeholder="Transaction file" required>
+    <button type="submit">Submit Transaction</button>
+  </form>
+
+
   <div style="display: flex; gap: 20px;">
     <!-- Left: Pending Transactions -->
     <div style="flex: 1;">
@@ -169,7 +176,8 @@
         padding: 10px;
         border-radius: 5px;
         overflow-x: auto;
-        margin-bottom: 0;
+        margin-bottom: 5px;
+        line-height: 1.4;
         background-color: #e9ecef;
         color: #000;        
     }
