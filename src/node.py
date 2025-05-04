@@ -158,14 +158,28 @@ class Node:
         self.mining_thread.start()
 
 
-    def broadcast_transaction(self, transaction):
+    def broadcast_transaction_old(self, transaction_data):
         payload = {
-            "transaction": transaction,
+            "transaction": transaction_data,
             "peer": self.node_url
         }
         for peer in self.peers:
             try:
                 r = requests.post(f"{peer}/submit_transaction_old", json=payload, timeout=2)
+                if not r.ok:
+                    print(f"{peer} rejected transaction: {r.text}")
+            except Exception as e:
+                print(f"Error sending transaction to {peer}: {e}")
+
+
+    def broadcast_transaction(self, transaction):
+        payload = {
+            "transaction": transaction.to_dict(),
+            "peer": self.node_url
+        }
+        for peer in self.peers:
+            try:
+                r = requests.post(f"{peer}/submit_transaction", json=payload, timeout=2)
                 if not r.ok:
                     print(f"{peer} rejected transaction: {r.text}")
             except Exception as e:

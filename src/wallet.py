@@ -23,9 +23,9 @@ class Wallet:
 
     def save_wallet(self, path):
         data = {
+            'address': self.address,
             'private_key': self.private_key.to_string().hex(),
-            'public_key': self.public_key.to_string().hex(),
-            'address': self.address
+            'public_key': self.public_key.to_string().hex()
         }
         with open(path, 'w') as f:
             json.dump(data, f)
