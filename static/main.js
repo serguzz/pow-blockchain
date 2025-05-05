@@ -94,48 +94,6 @@ function startSSE() {
           localStorage.setItem('theme', 'light');
       }
   });
-
-  // Old simple transaction form (transaction - simple string)
-  document.getElementById('transactionForm_old').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const input = document.getElementById('transactionInput');
-    const value = input.value.trim();
-  
-    if (!value) return;
-  
-    const res = await fetch('/submit_test_transaction', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ transaction: value })
-    });
-  
-    const msg = await res.json();
-    // alert(msg.message || msg.error);
-  
-    input.value = '';
-    fetchTransactions();
-  });
-
-  // New transaction form. Transaction - JSON object with 'sender', 'receiver', and 'amount' info
-  document.getElementById('transactionForm').addEventListener('submit', async function(event) {
-    event.preventDefault();
-    const sender = document.getElementById('sender_wallet').value;
-    const recipient = document.getElementById('recipient_wallet').value;
-    const amount = document.getElementById('amount').value;
-  
-    await fetch('/submit_transaction', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sender, recipient, amount })
-    });
-
-    // Clear the form fields
-    // document.getElementById('sender_wallet').value = '';
-    // document.getElementById('recipient_wallet').value = '';
-    // document.getElementById('amount').value = '';
-    // Fetch the transactions again to update the UI
-    fetchTransactions();
-  });
   
   // Transaction file form. Transaction - JSON object with 'sender', 'receiver', and 'amount' info
   document.getElementById('transactionFileForm').addEventListener('submit', async function(event) {
@@ -165,31 +123,6 @@ function startSSE() {
 
 async function fetchTransactions() {
     const res = await fetch('/transactions');
-    const res2 = await fetch('/test_transactions');
-    const data = await res.json();
-    const testData = await res2.json();
-  
-    const pendingList = document.getElementById('pendingTransactions');
-    pendingList.innerHTML = '';
-  
-    if (data.length === 0 && testData.length === 0) {
-      pendingList.innerHTML = '<li>No pending transactions.</li>';
-      return;
-    }
-
-    dataAll = data.concat(testData);
-  
-    dataAll.forEach(tx => {
-      // alert("Transaction: " + tx);
-      const li = document.createElement('li');
-      li.textContent = JSON.stringify(tx, null, 2);
-      pendingList.appendChild(li);
-    });
-
-  }
-
-  async function fetchTestTransactions() {
-    const res = await fetch('/test_transactions');
     const data = await res.json();
   
     const pendingList = document.getElementById('pendingTransactions');
