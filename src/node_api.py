@@ -48,9 +48,14 @@ class NodeAPI:
         def get_transactions():
             # return json.dump([tx.to_dict() for tx in self.node.pending_transactions], fp=)
             return jsonify([tx.to_dict() for tx in self.node.pending_transactions])
+        
+        @self.app.route('/test_transactions', methods=['GET'])
+        def get_test_transactions():
+            return jsonify([tx for tx in self.node.test_transactions])
 
-        @self.app.route('/submit_transaction_old', methods=['POST'])
-        def submit_transaction_old():
+
+        @self.app.route('/submit_test_transaction', methods=['POST'])
+        def submit_test_transaction():
             data = request.get_json()
             tx = data.get("transaction")
             peer = data.get("peer")
@@ -58,20 +63,20 @@ class NodeAPI:
                 self.node.broadcast_message(f"[+] Transaction submitted by unknown peer: {peer}. Registering the peer...")
                 self.node.peers.add(peer)
             if tx:
-                if tx not in self.node.pending_transactions:
-                    self.node.broadcast_message(f"⛏️  New transaction submitted: {tx}")
-                    self.node.pending_transactions.append(tx)
-                    self.node.broadcast_transaction_old(tx)
+                if tx not in self.node.test_transactions:
+                    self.node.broadcast_message(f"⛏️  New test transaction submitted: {tx}")
+                    self.node.test_transactions.append(tx)
+                    self.node.broadcast_test_transaction(tx)
 
                     # ✅ If not already mining, start mining
                     if not self.node.is_mining:
                         print(f"⛏️  Starting mining on received transaction.")
                         self.node.start_mining()
-                    return jsonify({'message': 'Transaction accepted'}), 200
-                print(f"⛏️  Duplicate transaction: {tx}")
-                return jsonify({'message': 'Duplicate transaction'}), 400
-            print(f"⛏️  Invalid transaction: {tx}")
-            return jsonify({'error': 'Invalid transaction'}), 400
+                    return jsonify({'message': 'Test transaction accepted'}), 200
+                print(f"⛏️  Duplicate test transaction: {tx}")
+                return jsonify({'message': 'Duplicate test transaction'}), 400
+            print(f"⛏️  Invalid test transaction: {tx}")
+            return jsonify({'error': 'Invalid test transaction'}), 400
 
 
         @self.app.route('/submit_transaction', methods=['POST'])

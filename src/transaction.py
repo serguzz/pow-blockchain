@@ -43,7 +43,7 @@ class Transaction:
         
     def __str__(self):
         return f"from_address: {self.from_address}, \
-            from_public_key: {self.from_public_key}, \
+            from_public_key: {self.from_public_key.to_string().hex()}, \
             to_address: {self.to_address}, \
             amount: {self.amount}, \
             signature: {self.signature}, \

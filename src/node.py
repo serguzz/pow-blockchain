@@ -15,6 +15,7 @@ class Node:
         self.subscribers = []
         self.stop_event = Event()  # Event to stop mining thread if needed
         self.pending_transactions = []  # List to hold pending transactions
+        self.test_transactions = []  # List to hold test transactions
         self.is_mining = False
         self.mining_thread = None
 
@@ -122,7 +123,7 @@ class Node:
 
             # Mine and save the new block
             transaction = self.pending_transactions[0] if self.pending_transactions else "empty"
-            transaction_data = transaction.to_dict() if self.pending_transactions else "empty"
+            # transaction_data = transaction.to_dict() if self.pending_transactions else "empty"
             transaction_data = transaction.to_json() if self.pending_transactions else "empty"
 
             self.broadcast_message(f"⛏️  Mining block with data: {transaction_data}")
@@ -159,14 +160,14 @@ class Node:
         self.mining_thread.start()
 
 
-    def broadcast_transaction_old(self, transaction_data):
+    def broadcast_test_transaction(self, transaction_data):
         payload = {
             "transaction": transaction_data,
             "peer": self.node_url
         }
         for peer in self.peers:
             try:
-                r = requests.post(f"{peer}/submit_transaction_old", json=payload, timeout=2)
+                r = requests.post(f"{peer}/submit_test_transaction", json=payload, timeout=2)
                 if not r.ok:
                     print(f"{peer} rejected transaction: {r.text}")
             except Exception as e:

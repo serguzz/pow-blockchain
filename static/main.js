@@ -103,7 +103,7 @@ function startSSE() {
   
     if (!value) return;
   
-    const res = await fetch('/submit_transaction_old', {
+    const res = await fetch('/submit_test_transaction', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ transaction: value })
@@ -165,6 +165,31 @@ function startSSE() {
 
 async function fetchTransactions() {
     const res = await fetch('/transactions');
+    const res2 = await fetch('/test_transactions');
+    const data = await res.json();
+    const testData = await res2.json();
+  
+    const pendingList = document.getElementById('pendingTransactions');
+    pendingList.innerHTML = '';
+  
+    if (data.length === 0 && testData.length === 0) {
+      pendingList.innerHTML = '<li>No pending transactions.</li>';
+      return;
+    }
+
+    dataAll = data.concat(testData);
+  
+    dataAll.forEach(tx => {
+      // alert("Transaction: " + tx);
+      const li = document.createElement('li');
+      li.textContent = JSON.stringify(tx, null, 2);
+      pendingList.appendChild(li);
+    });
+
+  }
+
+  async function fetchTestTransactions() {
+    const res = await fetch('/test_transactions');
     const data = await res.json();
   
     const pendingList = document.getElementById('pendingTransactions');
