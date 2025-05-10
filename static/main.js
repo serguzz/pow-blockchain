@@ -10,7 +10,6 @@ function log(msg) {
   // and add timestamp to first line only
  
   let finalText = `[${time}] ${msg}`;
-
   el.textContent += finalText + "\n";
   el.scrollTop = el.scrollHeight;
 }
@@ -82,47 +81,11 @@ function renderPendingTransactions(pendingTransactionsData) {
     pendingTransactionsData.forEach(tx => {
         const txHTML = `
         <li>
-            <pre>${tx}</pre>
+            <pre>${JSON.stringify(tx, null, 2)}</pre>
         </li>`;
         pendingList.innerHTML += txHTML;
     });
 }
-
-
-
-async function fetchTransactions() {
-    const res = await fetch('/transactions');
-    const data = await res.json();
-  
-    const pendingList = document.getElementById('pendingTransactions');
-    pendingList.innerHTML = '';
-  
-    if (data.length === 0) {
-      pendingList.innerHTML = '<li>No pending transactions.</li>';
-      return;
-    }
-  
-    data.forEach(tx => {
-      const txHTML = `
-      <li>
-        <pre>${tx}</pre>
-        <div class="block">
-        <pre>
-          <p><strong>ID:</strong> ${tx.tx_id}</p>
-          <p><strong>Sender:</strong> ${tx.sender}</p>
-          <p><strong>Receiver:</strong> ${tx.receiver}</p>
-          <p><strong>Amount:</strong> ${tx.amount}</p>
-          <p><strong>Signature:</strong> ${tx.signature}</p>
-        </pre>
-        </div>
-      </li>`;
-      pendingList.innerHTML += txHTML;
-      
-      pendingList.appendChild(li);
-    });
-
-  }
-
 
 function fetchPeers() {
     fetch('/peers')
