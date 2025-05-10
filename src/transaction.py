@@ -82,8 +82,7 @@ class Transaction:
     def to_file(self, path):
         """Save transaction to a file."""
         with open(path, 'w') as f:
-            # f.write(str(self.to_dict()))
-            f.write(json.dumps(self.to_dict(), indent=4)) # Uncomment this line to use JSON saving instead of str()
+            f.write(json.dumps(self.to_dict(), indent=4)) # JSON saving
 
     @classmethod
     def from_file(cls, path):
@@ -91,7 +90,6 @@ class Transaction:
         with open(path, 'r') as f:
             data = json.load(f)
             return cls.from_dict(data)
-        # return cls.from_dict(json.load(f))  # Uncomment this line to use JSON loading instead of eval
 
     @classmethod
     def from_file_object(cls, file_obj):

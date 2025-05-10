@@ -1,6 +1,5 @@
 import requests
 from threading import Thread, Event
-from urllib.parse import urlparse
 from .blockchain import Blockchain
 from .block import Block
 
@@ -102,7 +101,6 @@ class Node:
             except Exception as e:
                 print(f"Could not sync with {peer}: {e}")
 
-        # if len(longest_chain) >= len(self.blockchain.chain):
         if longest_chain != self.blockchain.chain:
             self.blockchain.chain = longest_chain
             self.blockchain.save_chain()

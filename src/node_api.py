@@ -1,11 +1,10 @@
 from flask import request, jsonify, render_template, Response
 import queue
 from urllib.parse import urlparse
-import os, json
+import json
 
 from .block import Block
 from .transaction import Transaction
-from .wallet import Wallet
 
 class NodeAPI:
     def __init__(self, app, node):
@@ -46,10 +45,7 @@ class NodeAPI:
 
         @self.app.route('/transactions', methods=['GET'])
         def get_transactions():
-            # return json.dump([tx.to_dict() for tx in self.node.pending_transactions], fp=)
             return [tx.to_dict() for tx in self.node.pending_transactions]
-            # return [block.__dict__ for block in self.node.blockchain.chain]
-            # return jsonify([tx.to_dict() for tx in self.node.pending_transactions])
         
 
         @self.app.route('/submit_transaction', methods=['POST'])
@@ -65,7 +61,7 @@ class NodeAPI:
             if not tx_data:
                 return jsonify({'error': 'No transaction data provided'}), 400
             
-            # Validate the transaction
+            # Validate received transaction
             tx = Transaction.from_dict(tx_data)
             if not tx.is_valid():
                 print(f"⛏️  Invalid transaction: {tx} - Rejecting.")
@@ -94,20 +90,6 @@ class NodeAPI:
             if transaction_file.filename == '':
                 return jsonify({"error": "No selected file."}), 400
             
-            # filename = transaction_file.filename
-
-            # filename = request.args.get('filename')
-            # path = os.path.join('transactions', filename)
-
-            '''
-            if not os.path.exists(path):
-                return jsonify({"error": "Transaction file not found."}), 404
-
-            with open(path, 'r') as f:
-                tx_data = json.load(f)
-
-            transaction = Transaction.from_dict(tx_data)
-            '''
             transaction = Transaction.from_file_object(transaction_file)
             filename = transaction_file.filename
 
@@ -123,8 +105,7 @@ class NodeAPI:
             if not self.node.is_mining:
                 print(f"⛏️  Starting mining on received transaction.")
                 self.node.start_mining()
-            # return jsonify({'message': 'Transaction accepted'}), 200
-
+            
             return jsonify({"message": "Transaction submitted, validated and broadcasted successfully!"}), 200
 
 
@@ -176,10 +157,6 @@ class NodeAPI:
                         return jsonify({'error': 'Invalid block'}), 400
                     else:
                         print(f"Received block {block} from {miner} is valid after syncing.")
-                        # TODO: Maybe need to stop mining if block triggered syncing and
-                        # the syncing was successful
-                        # self.node.stop_event.set()  # Stop mining if valid block triggered needed syncing
-                        # also, check if transactions need to be removed from pending transactions
                         return jsonify({'message': 'Block accepted after syncing'}), 200
 
                 # stop mining if valid block received
@@ -193,7 +170,6 @@ class NodeAPI:
                 self.node.blockchain.save_chain()
 
                 # Remove the transactions of new block from pending transactions
-                # (if there are any)
                 received_transactions = Transaction.from_dict(json.loads(block.transactions))
                 
                 duplicate_transaction = False
