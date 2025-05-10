@@ -188,14 +188,23 @@ class NodeAPI:
                     print("🛑 Valid incoming block! Any mining will be stopped.")
 
                 # Now safely add the received block to the chain
-                self.node.blockchain.chain.append(block)
-                # Remove the transactions from pending transactions
-                transactions = block.transactions
-                if transactions in self.node.pending_transactions:
-                    self.node.pending_transactions.remove(transactions)
-
+                self.node.blockchain.chain.append(block)                
                 self.node.broadcast_message(f"✅ Block {block.index} accepted from {miner}.")
                 self.node.blockchain.save_chain()
+
+                # Remove the transactions of new block from pending transactions
+                # (if there are any)
+                received_transactions = Transaction.from_dict(json.loads(block.transactions))
+                
+                duplicate_transaction = False
+                for tx in self.node.pending_transactions:
+                    if tx == received_transactions:
+                        self.node.pending_transactions.remove(tx)
+                        duplicate_transaction = True
+                        print(f"Removed transactions from pending transactions. Removed ID: {tx.tx_id}")
+                        self.node.broadcast_message(f"Transaction removed from pending transactions. tx_id: {tx.tx_id} .")
+                if not duplicate_transaction:
+                    print(f"Transactions {received_transactions.tx_id} not found in pending transactions.")
                 # self.node.broadcast_to_subscribers(block, miner)  # broadcast to frontend subscribers
                 return jsonify({'message': 'Block added'}), 200
 

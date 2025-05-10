@@ -112,8 +112,13 @@ function startSSE() {
             fetchChain();  // 🟢 re-fetch the chain from backend
             fetchPendingTransactions();  // 🟢 re-fetch the transactions from backend
         }
+        if (msg.includes("removed from pending transactions")) {
+            fetchPendingTransactions();  // 🟢 re-fetch the transactions from backend
+        }
     }
+    fetchPeers();  // 🟢 fetch peers on load
     fetchChain();  // 🟢 fetch the chain on load
+    fetchPendingTransactions(); // 🟢 fetch perding transaction on load
     setDarkTheme();
 
   // Toggle and save
