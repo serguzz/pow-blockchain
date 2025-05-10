@@ -27,10 +27,10 @@ class Node:
 
 
     # Broadcast message to subscribers            
-    def broadcast_message(self, message):
+    def broadcast_message(self, msg):
         for q in self.subscribers:
             try:
-                q.put(message)
+                q.put(msg)
             except:
                 continue
     
@@ -124,7 +124,10 @@ class Node:
             transaction = self.pending_transactions[0] if self.pending_transactions else "empty"
             transaction_data = transaction.to_json() if transaction != "empty" else "empty"
 
-            self.broadcast_message(f"⛏️  Mining block with data: {transaction_data}")
+            # TODO: Pass transaction as string and then parse it to multiple lines on frontend
+            # self.broadcast_message(f"⛏️  Mining block with data: {transaction_data}")
+            self.broadcast_message(f"⛏️  Mining block with transaction. Tx id: {transaction.tx_id}")
+            
             new_block = self.blockchain.mine_block(transaction_data, stop_event=self.stop_event)
 
             if new_block is None:

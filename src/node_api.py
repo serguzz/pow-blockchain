@@ -47,7 +47,9 @@ class NodeAPI:
         @self.app.route('/transactions', methods=['GET'])
         def get_transactions():
             # return json.dump([tx.to_dict() for tx in self.node.pending_transactions], fp=)
-            return jsonify([tx.to_dict() for tx in self.node.pending_transactions])
+            return [tx.to_dict() for tx in self.node.pending_transactions]
+            # return [block.__dict__ for block in self.node.blockchain.chain]
+            # return jsonify([tx.to_dict() for tx in self.node.pending_transactions])
         
 
         @self.app.route('/submit_transaction', methods=['POST'])

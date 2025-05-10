@@ -42,11 +42,11 @@ class Transaction:
     
         
     def __str__(self):
-        return f"from_address: {self.from_address}, \
-            from_public_key: {self.from_public_key.to_string().hex()}, \
-            to_address: {self.to_address}, \
-            amount: {self.amount}, \
-            signature: {self.signature}, \
+        return f"from_address: {self.from_address},\n \
+            from_public_key: {self.from_public_key.to_string().hex()},\n \
+            to_address: {self.to_address},\n \
+            amount: {self.amount},\n \
+            signature: {self.signature},\n \
             tx_id: {self.tx_id}"
     
 
