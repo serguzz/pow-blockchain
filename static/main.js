@@ -44,6 +44,11 @@ function renderChain(chainData) {
     chainContainer.innerHTML = "";  // Clear old blocks
 
     chainData.forEach(block => {
+        // wrap older block with one transaction
+        const transactions = Array.isArray(block.transactions) ? block.transactions : [block.transactions];
+        const transactionsHTML = '<pre>[' + transactions.map(tx => 
+            `${tx}`
+        ).join(',') + ']</pre>';
         const blockHTML = `
         <div class="block">
             <h2>Block #${block.index}</h2>
@@ -54,7 +59,7 @@ function renderChain(chainData) {
             <p><strong>Difficulty:</strong> ${block.difficulty}</p>
             <p><strong>Miner:</strong> ${block.miner}</p>
             <p><strong>Data:</strong></p>
-            <pre>${block.transactions}</pre>
+            ${transactionsHTML}
         </div>`;
         chainContainer.innerHTML += blockHTML;
     });

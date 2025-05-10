@@ -1,10 +1,11 @@
 import hashlib
 import time
 import json
+from .transaction import Transaction
 
 # Block class with PoW
 class Block:
-    def __init__(self, index, previous_hash, transactions, miner, difficulty=1, timestamp=None, nonce=0, hash=None):
+    def __init__(self, index, previous_hash, transactions: list[Transaction], miner, difficulty=1, timestamp=None, nonce=0, hash=None):
         self.index = index
         self.previous_hash = previous_hash
         self.timestamp = round(timestamp or time.time(), 6)
@@ -47,12 +48,15 @@ class Block:
             'index': self.index,
             'previous_hash': self.previous_hash,
             'timestamp': self.timestamp,
-            'transactions': self.transactions,
+            'transactions': [tx.to_dict() for tx in self.transactions],
             'miner': self.miner,
             'difficulty': self.difficulty,
             'nonce': self.nonce,
             'hash': self.hash
         }
+
+    def to_json(self):
+        return json.dumps(self.to_dict(), indent=4)
     
 
     def __str__(self):
@@ -70,11 +74,18 @@ class Block:
     def __eq__(self, other):
         if not isinstance(other, Block):
             return False
+        transactions = [tx.to_dict() for tx in self.transactions]
+        other_transactions = [tx.to_dict() for tx in other.transactions]
+        if len(transactions) != len(other_transactions):
+            return False
+        for i in range(len(transactions)):
+            if transactions[i] != other_transactions[i]:
+                return False
         return (
             self.index == other.index and
             self.previous_hash == other.previous_hash and
             self.timestamp == other.timestamp and
-            self.transactions == other.transactions and
+            # self.transactions == other.transactions and
             self.miner == other.miner and
             self.difficulty == other.difficulty and
             self.nonce == other.nonce and
@@ -84,11 +95,12 @@ class Block:
 
     @staticmethod
     def from_dict(data):
+        transactions = [Transaction.from_dict(tx) for tx in data['transactions']]
         block = Block(
             index=data['index'],
             previous_hash=data['previous_hash'],
             timestamp=data['timestamp'], # Assume timestamp is already rounded
-            transactions=data['transactions'],
+            transactions=transactions,
             miner=data['miner'],
             difficulty=data['difficulty'],
             nonce=data['nonce'],
